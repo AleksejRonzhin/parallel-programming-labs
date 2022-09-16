@@ -12,9 +12,16 @@ public class RiemannSumIntegralCalculator implements IntegralCalculator{
     @Override
     public double calculate(double begin, double end, DoubleUnaryOperator f) {
         double sum = 0;
-        for (double x = begin; x < end; x += step) {
-            double y = f.applyAsDouble(x);
-            sum += step * y;
+        int partCount = 10;
+        double part = (end - begin) / partCount;
+        for(int i = 0; i < partCount; i++){
+            double beginPart = begin + i * part;
+            double endPart = begin + (i + 1) * part;
+            for (double x = beginPart; x < endPart; x += step) {
+                double y = f.applyAsDouble(x);
+                sum += step * y;
+            }
+            System.out.printf("Process: %d%%\n", (i + 1) * 10);
         }
         return sum;
     }

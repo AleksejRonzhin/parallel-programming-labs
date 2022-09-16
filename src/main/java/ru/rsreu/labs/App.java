@@ -7,13 +7,13 @@ public class App {
         double step = 1E-9;
         double radius = 2;
 
-        IntStream.range(0, 5).forEach(it -> {
+        Thread thread = new Thread(() -> {
             long startTime = System.currentTimeMillis();
             double pi = new CircleAreaPiCalculator(step, radius).calculate();
             long endTime = System.currentTimeMillis();
             long resultTime = endTime - startTime;
             System.out.println("Value: " + pi + ". Time: " + resultTime + "ms");
         });
-
+        thread.start();
     }
 }

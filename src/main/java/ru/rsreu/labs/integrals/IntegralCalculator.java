@@ -1,4 +1,4 @@
-package ru.rsreu.labs;
+package ru.rsreu.labs.integrals;
 
 import java.util.function.DoubleUnaryOperator;
 

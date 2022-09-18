@@ -1,16 +1,16 @@
 package ru.rsreu.labs.commands;
 
-import ru.rsreu.labs.commands.ThreadCommand;
-import ru.rsreu.labs.repo.ThreadRepo;
+import ru.rsreu.labs.repo.TaskRepo;
 
-public class ExitCommand extends ThreadCommand {
-    public ExitCommand(ThreadRepo repo) {
+public class ExitCommand extends TaskCommand {
+    public ExitCommand(TaskRepo repo) {
         super(repo);
     }
 
     @Override
     public void execute() {
-        System.out.println("Good buy");
+        repo.stopAll();
+        System.out.println("Good buy!");
     }
 
     @Override

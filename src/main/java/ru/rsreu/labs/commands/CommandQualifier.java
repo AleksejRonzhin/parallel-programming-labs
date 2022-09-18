@@ -1,17 +1,18 @@
 package ru.rsreu.labs.commands;
 
 import ru.rsreu.labs.TargetCreator;
-import ru.rsreu.labs.repo.ThreadRepo;
+import ru.rsreu.labs.exceptions.WrongCommandException;
+import ru.rsreu.labs.repo.TaskRepo;
 
 public class CommandQualifier {
-    private final ThreadRepo repo = new ThreadRepo();
+    private final TaskRepo repo = new TaskRepo();
     private final TargetCreator targetCreator;
 
     public CommandQualifier(TargetCreator targetCreator) {
         this.targetCreator = targetCreator;
     }
 
-    public Command qualify(String line) {
+    public Command qualify(String line) throws WrongCommandException {
         try {
             String[] substrings = line.split(" ", 2);
             String commandEntry = substrings[0];
@@ -28,9 +29,9 @@ public class CommandQualifier {
                 if (commandEntry.equals("await")) return new AwaitCommand(repo, id);
                 return new StopCommand(repo, id);
             }
-            return new EmptyCommand();
-        } catch (Exception ex) {
-            return new EmptyCommand();
+            throw new WrongCommandException();
+        } catch (Exception ignore) {
+            throw new WrongCommandException();
         }
     }
 }

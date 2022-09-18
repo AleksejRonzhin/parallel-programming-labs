@@ -1,21 +1,29 @@
 package ru.rsreu.labs;
 
-import java.util.stream.IntStream;
+import ru.rsreu.labs.commands.Command;
+import ru.rsreu.labs.commands.CommandQualifier;
+
+import java.util.Scanner;
 
 public class App {
+
+
     public static void main(String[] args) {
-        double step = 1E-9;
-        double radius = 4;
+        new App().start();
+    }
 
-        Runnable target = () -> {
-            long startTime = System.currentTimeMillis();
-            double pi = new CircleAreaPiCalculator(step, radius).calculate();
-            long endTime = System.currentTimeMillis();
-            long resultTime = endTime - startTime;
-            System.out.println("Value: " + pi + ". Time: " + resultTime + "ms");
-        };
+    private void start(){
+        TargetCreator targetCreator = new PiCalculatingCreator();
+        Scanner scanner = new Scanner(System.in);
+        CommandQualifier commandQualifier = new CommandQualifier(targetCreator);
+        Command command;
+        do{
+            System.out.print("Input: ");
+            String line = scanner.nextLine();
 
-        Thread thread = new Thread(target);
-        thread.start();
+            command = commandQualifier.qualify(line);
+            command.execute();
+            scanner.reset();
+        }while(!command.needExit()); // ACTIVE, EXIT, AWAIT
     }
 }

@@ -22,7 +22,6 @@ public class RiemannSumIntegralCalculator implements IntegralCalculator{
                 double y = f.applyAsDouble(x);
                 sum += step * y;
             }
-            System.out.printf("Progress: %d%%\n", (i + 1) * 10);
         }
         return sum;
     }

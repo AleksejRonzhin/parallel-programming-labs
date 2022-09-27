@@ -1,19 +1,19 @@
-package ru.rsreu.labs.repo;
+package ru.rsreu.labs.tasks;
 
 import ru.rsreu.labs.exceptions.TaskNotFoundException;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class TaskRepo {
-    private final Map<Integer, Thread> tasks = new HashMap<>();
+public class ThreadRepo {
+    private final Map<Integer, Thread> threads = new HashMap<>();
 
     public int create(Runnable target) {
-        int id = tasks.size();
+        int id = threads.size();
         String name = "thread " + id;
         Thread thread = new Thread(target, name);
         thread.setUncaughtExceptionHandler((t, e) -> System.out.printf("Exception in %s: %s\n", t.getName(), e));
-        tasks.put(id, thread);
+        threads.put(id, thread);
         return id;
     }
 
@@ -27,8 +27,8 @@ public class TaskRepo {
         thread.stop();
     }
 
-    public void stopAll(){
-        tasks.values().forEach(Thread::stop);
+    public void stopAll() {
+        threads.values().forEach(Thread::stop);
     }
 
     public void await(int id) throws TaskNotFoundException {
@@ -39,8 +39,8 @@ public class TaskRepo {
     }
 
     private Thread getByTaskId(int id) throws TaskNotFoundException {
-        Thread thread = tasks.get(id);
-        if(thread == null){
+        Thread thread = threads.get(id);
+        if (thread == null) {
             throw new TaskNotFoundException();
         }
         return thread;

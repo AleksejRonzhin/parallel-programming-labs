@@ -1,15 +1,19 @@
-package ru.rsreu.labs.commands;
+package ru.rsreu.labs.tasks;
 
-import ru.rsreu.labs.TargetCreator;
+import ru.rsreu.labs.commands.Command;
 import ru.rsreu.labs.exceptions.WrongCommandException;
-import ru.rsreu.labs.repo.TaskRepo;
+import ru.rsreu.labs.tasks.commands.AwaitCommand;
+import ru.rsreu.labs.tasks.commands.ExitCommand;
+import ru.rsreu.labs.tasks.commands.StartCommand;
+import ru.rsreu.labs.tasks.commands.StopCommand;
 
-public class CommandQualifier {
-    private final TaskRepo repo = new TaskRepo();
-    private final TargetCreator targetCreator;
+public class TaskCommandQualifier {
+    private final ThreadRepo repo;
+    private final TaskCreator taskCreator;
 
-    public CommandQualifier(TargetCreator targetCreator) {
-        this.targetCreator = targetCreator;
+    public TaskCommandQualifier(TaskCreator taskCreator) {
+        this.taskCreator = taskCreator;
+        this.repo = taskCreator.getRepo();
     }
 
     public Command qualify(String line) throws WrongCommandException {
@@ -21,8 +25,8 @@ public class CommandQualifier {
             }
             String[] parameters = substrings[1].split(" ");
             if (commandEntry.equals("start")) {
-                Runnable target = this.targetCreator.create(parameters);
-                return new StartCommand(repo, target);
+                int taskId = this.taskCreator.create(parameters);
+                return new StartCommand(repo, taskId);
             }
             if (commandEntry.equals("await") || commandEntry.equals("stop")) {
                 int id = Integer.parseInt(parameters[0]);

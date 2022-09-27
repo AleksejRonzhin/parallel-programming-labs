@@ -1,7 +1,8 @@
-package ru.rsreu.labs;
+package ru.rsreu.labs.tasks.pi;
 
 import ru.rsreu.labs.integrals.IntegralCalculator;
 import ru.rsreu.labs.integrals.RiemannSumIntegralCalculator;
+import ru.rsreu.labs.tasks.TaskProgress;
 
 import java.util.function.DoubleUnaryOperator;
 
@@ -14,13 +15,14 @@ public class CircleAreaPiCalculator {
         this.radius = radius;
     }
 
-    public double calculate() {
-        return calculateCircleArea() / (radius * radius);
+    public void calculate(TaskProgress<Double> taskProgress) {
+        taskProgress.addMapper(circleArea -> circleArea / (radius * radius));
+        calculateCircleArea(taskProgress);
     }
 
-    private double calculateCircleArea(){
+    private void calculateCircleArea(TaskProgress<Double> taskProgress) {
         DoubleUnaryOperator circleEquation = x -> Math.sqrt(radius * radius - x * x);
-        double sectorArea = integralCalculator.calculate(0, radius, circleEquation);
-        return sectorArea * 4;
+        taskProgress.addMapper(sectorArea -> sectorArea * 4);
+        integralCalculator.calculate(0, radius, circleEquation, taskProgress);
     }
 }

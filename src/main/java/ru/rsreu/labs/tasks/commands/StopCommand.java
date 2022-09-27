@@ -1,11 +1,12 @@
-package ru.rsreu.labs.commands;
+package ru.rsreu.labs.tasks.commands;
 
 import ru.rsreu.labs.exceptions.TaskNotFoundException;
-import ru.rsreu.labs.repo.TaskRepo;
+import ru.rsreu.labs.tasks.ThreadRepo;
 
-public class StopCommand extends TaskCommand {
+public class StopCommand extends ThreadCommand {
     private final int threadId;
-    protected StopCommand(TaskRepo repo, int threadId) {
+
+    public StopCommand(ThreadRepo repo, int threadId) {
         super(repo);
         this.threadId = threadId;
     }
@@ -13,6 +14,6 @@ public class StopCommand extends TaskCommand {
     @Override
     public void execute() throws TaskNotFoundException {
         repo.stop(threadId);
-        System.out.printf("Stopped thread %d\n", threadId);
+        System.out.printf("Stopped task %d\n", threadId);
     }
 }

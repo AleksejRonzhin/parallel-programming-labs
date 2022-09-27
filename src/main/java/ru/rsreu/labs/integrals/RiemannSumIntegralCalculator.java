@@ -15,8 +15,8 @@ public class RiemannSumIntegralCalculator implements IntegralCalculator {
     @Override
     public void calculate(double begin, double end, DoubleUnaryOperator f, TaskProgress<Double> taskProgress) {
         double sum = 0;
-        int partCount = (int) ((end - begin) / step) + 1;
-        taskProgress.init(partCount);
+        int partCount = (int) ((end - begin) / step);
+        taskProgress.init(partCount + 1);
         for (double x = begin; x < end; x += step) {
             double y = f.applyAsDouble(x);
             sum += step * y;

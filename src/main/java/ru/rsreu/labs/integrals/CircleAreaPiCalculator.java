@@ -1,4 +1,4 @@
-package ru.rsreu.labs.tasks.pi;
+package ru.rsreu.labs.integrals;
 
 import ru.rsreu.labs.integrals.IntegralCalculator;
 import ru.rsreu.labs.integrals.RiemannSumIntegralCalculator;

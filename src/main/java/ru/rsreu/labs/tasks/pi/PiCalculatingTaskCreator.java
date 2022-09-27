@@ -1,6 +1,7 @@
 package ru.rsreu.labs.tasks.pi;
 
 import ru.rsreu.labs.Logger;
+import ru.rsreu.labs.integrals.CircleAreaPiCalculator;
 import ru.rsreu.labs.tasks.TaskProgress;
 import ru.rsreu.labs.tasks.TaskCreator;
 import ru.rsreu.labs.tasks.ThreadRepo;

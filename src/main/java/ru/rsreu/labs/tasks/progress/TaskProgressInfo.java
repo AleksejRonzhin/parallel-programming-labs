@@ -4,12 +4,12 @@ import java.util.*;
 import java.util.function.Function;
 
 public class TaskProgressInfo<T> {
+    protected final Collection<TaskProgressInfoEventListener<T>> listeners = new ArrayList<>();
+    protected final ProgressSegmentationHelper progressSegmentationHelper = new ProgressSegmentationHelper();
     private final Deque<Function<T, T>> resultMappers = new LinkedList<>();
-    private final Collection<TaskProgressInfoEventListener> listeners = new ArrayList<>();
-    private final ProgressSegmentationHelper progressSegmentationHelper = new ProgressSegmentationHelper();
+    protected long startTime;
+    protected long endTime;
     private T taskResult;
-    private String taskName;
-    private long startTime;
 
     public Optional<T> getTaskResult() {
         if (this.taskResult == null) return Optional.empty();
@@ -23,8 +23,13 @@ public class TaskProgressInfo<T> {
 
         }
         this.taskResult = res;
-        long time = System.currentTimeMillis() - startTime;
-        fireTaskProgressInfoEvent(String.format("Result %s: %s. Time: %d ms", this.taskName, this.taskResult, time));
+        endTime = System.currentTimeMillis();
+        fireTaskCompletedEvent(res);
+    }
+
+    public Optional<Long> getTime(){
+        if(startTime == 0 || endTime == 0) return Optional.empty();
+        return Optional.of(endTime - startTime);
     }
 
     public void addMapper(Function<T, T> mapper) {
@@ -33,30 +38,33 @@ public class TaskProgressInfo<T> {
 
     public void setProgress(int progress) {
         if (progressSegmentationHelper.limitPassed(progress)) {
-            fireTaskProgressInfoEvent(String.format("Progress %s: %d%%", this.taskName, progress));
+            fireTaskProgressInfoEvent(progress);
         }
     }
 
     public void stopTask() {
-        fireTaskProgressInfoEvent(String.format("%s stopped", taskName));
+        //fireTaskProgressInfoEvent(String.format("%s stopped", taskName));
     }
 
-    public void setListener(TaskProgressInfoEventListener listener) {
+    public void setListener(TaskProgressInfoEventListener<T> listener) {
         listeners.add(listener);
     }
 
-    private void fireTaskProgressInfoEvent(String message) {
-        TaskProgressInfoEvent event = new TaskProgressInfoEvent(this, message);
-        for (TaskProgressInfoEventListener listener : listeners) {
-            listener.TaskProgressInfo(event);
+    protected void fireTaskProgressInfoEvent(int progress) {
+        TaskProgressEvent<T> event = new TaskProgressEvent<>(this, progress);
+        for (TaskProgressInfoEventListener<T> listener : listeners) {
+            listener.taskProgressInfo(event);
+        }
+    }
+
+    protected void fireTaskCompletedEvent(T result) {
+        TaskCompletedEvent<T> event = new TaskCompletedEvent<>(this, result);
+        for (TaskProgressInfoEventListener<T> listener : listeners) {
+            listener.taskCompleted(event);
         }
     }
 
     public void startTiming() {
         startTime = System.currentTimeMillis();
-    }
-
-    public void setTaskName(String taskName) {
-        this.taskName = taskName;
     }
 }

@@ -1,61 +1,38 @@
 package ru.rsreu.labs;
 
-import ru.rsreu.labs.commands.Command;
-import ru.rsreu.labs.commands.EmptyCommand;
-import ru.rsreu.labs.exceptions.TaskIsOverException;
-import ru.rsreu.labs.exceptions.TaskNotFoundException;
-import ru.rsreu.labs.exceptions.WrongCommandException;
 import ru.rsreu.labs.integrals.CircleAreaPiCalculator;
-import ru.rsreu.labs.tasks.TaskCommandQualifier;
-import ru.rsreu.labs.tasks.TaskCreator;
-import ru.rsreu.labs.tasks.ThreadRepo;
-import ru.rsreu.labs.tasks.commands.AwaitCommand;
-import ru.rsreu.labs.tasks.pi.PiCalculatingTaskCreator;
-import ru.rsreu.labs.tasks.pi.PiCalculatingTaskWithLogCreator;
+import ru.rsreu.labs.tasks.progress.GeneralProgress;
+import ru.rsreu.labs.tasks.progress.TaskProgressInfo;
 import ru.rsreu.labs.tasks.progress.TaskProgressLogger;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Scanner;
+import java.util.ArrayList;
+import java.util.Collection;
 
 public class App {
-    private final InputStream inputStream = System.in;
-    private final ThreadRepo repo = new ThreadRepo();
-    private final TaskCreator taskCreator = new PiCalculatingTaskWithLogCreator(repo);
-    private final TaskCommandQualifier taskCommandQualifier = new TaskCommandQualifier(taskCreator);
-    private final Scanner scanner = new Scanner(inputStream);
 
-    public static void main(String[] args) throws IOException {
-        new App().start();
+    public static void main(String[] args) {
+        TaskProgressInfo<Double> progressInfo = new TaskProgressInfo<>();
+        TaskProgressInfo<Double> progressInfo2 = new TaskProgressInfo<>();
+        TaskProgressInfo<Double> progressInfo3 = new TaskProgressInfo<>();
+        Collection<TaskProgressInfo<Double>> progresses = new ArrayList<>();
+        progresses.add(progressInfo);
+        progresses.add(progressInfo2);
+        progresses.add(progressInfo3);
+        TaskProgressLogger<Double> logger = new TaskProgressLogger<>();
+        GeneralProgress<Double> generalProgress = new GeneralProgress<>(progresses, App::sum);
+        logger.logProgress(generalProgress);
+        generalProgress.startTiming();
+        new Thread(() -> {
+            new CircleAreaPiCalculator(1E-9, 1).calculate(progressInfo);
+        }).start();
+
+        new Thread(() -> {
+            new CircleAreaPiCalculator(1E-9, 1).calculate(progressInfo3);
+        }).start();
+        new CircleAreaPiCalculator(1E-9, 1).calculate(progressInfo2);
     }
 
-    private void start() throws IOException {
-        Command command = new EmptyCommand();
-        printHelloText();
-        do {
-            String line = scanner.nextLine();
-            try {
-                command = taskCommandQualifier.qualify(line);
-                try {
-                    command.execute();
-                    if (command instanceof AwaitCommand) clear(inputStream);
-                } catch (TaskNotFoundException ex) {
-                    System.out.println("Task not found");
-                } catch (TaskIsOverException ex){
-                    System.out.println("Task is over");
-                }
-            } catch (WrongCommandException ex) {
-                System.out.println("Wrong command");
-            }
-        } while (!command.needExit());
-    }
-
-    private void printHelloText() {
-        System.out.println("Hello, you can calculate Pi using the area of a circle. For this you can use the commands:");
-        System.out.println("start <circle radius>; stop <task id>; await <task id>; exit.");
-    }
-
-    private void clear(InputStream inputStream) throws IOException {
-        inputStream.read(new byte[inputStream.available()]);
+    private static double sum(Collection<Double> values){
+        return values.stream().mapToDouble(Double::doubleValue).sum();
     }
 }

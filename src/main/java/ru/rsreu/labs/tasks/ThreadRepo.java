@@ -1,5 +1,6 @@
 package ru.rsreu.labs.tasks;
 
+import ru.rsreu.labs.exceptions.TaskIsOverException;
 import ru.rsreu.labs.exceptions.TaskNotFoundException;
 
 import java.util.HashMap;
@@ -12,7 +13,7 @@ public class ThreadRepo {
         int id = threads.size();
         String name = "thread " + id;
         Thread thread = new Thread(target, name);
-        thread.setUncaughtExceptionHandler((t, e) -> System.out.printf("Exception in %s: %s\n", t.getName(), e));
+        //thread.setUncaughtExceptionHandler((t, e) -> System.out.printf("Exception in %s: %s\n", t.getName(), e));
         threads.put(id, thread);
         return id;
     }
@@ -22,17 +23,17 @@ public class ThreadRepo {
         thread.start();
     }
 
-    public void stop(int id) throws TaskNotFoundException {
-        Thread thread = getByTaskId(id);
-        thread.stop();
+    public void stop(int id) throws TaskNotFoundException, TaskIsOverException {
+        Thread thread = getAliveThread(id);
+        thread.interrupt();
     }
 
     public void stopAll() {
-        threads.values().forEach(Thread::stop);
+        threads.values().forEach(Thread::interrupt);
     }
 
-    public void await(int id) throws TaskNotFoundException {
-        Thread thread = getByTaskId(id);
+    public void await(int id) throws TaskNotFoundException, TaskIsOverException {
+        Thread thread = getAliveThread(id);
         while (thread.isAlive()) {
 
         }
@@ -43,6 +44,12 @@ public class ThreadRepo {
         if (thread == null) {
             throw new TaskNotFoundException();
         }
+        return thread;
+    }
+
+    private Thread getAliveThread(int taskId) throws TaskNotFoundException, TaskIsOverException {
+        Thread thread = getByTaskId(taskId);
+        if (!thread.isAlive()) throw new TaskIsOverException();
         return thread;
     }
 }

@@ -1,6 +1,6 @@
 package ru.rsreu.labs.integrals;
 
-import ru.rsreu.labs.tasks.TaskProgress;
+import ru.rsreu.labs.tasks.progress.TaskProgressInfo;
 
 import java.util.function.DoubleUnaryOperator;
 
@@ -13,15 +13,29 @@ public class RiemannSumIntegralCalculator implements IntegralCalculator {
     }
 
     @Override
-    public void calculate(double begin, double end, DoubleUnaryOperator f, TaskProgress<Double> taskProgress) {
+    public double calculate(double begin, double end, DoubleUnaryOperator f) {
         double sum = 0;
-        int partCount = (int) ((end - begin) / step);
-        taskProgress.init(partCount + 1);
         for (double x = begin; x < end; x += step) {
             double y = f.applyAsDouble(x);
             sum += step * y;
-            taskProgress.increment();
         }
-        taskProgress.setTaskResult(sum);
+        return sum;
+    }
+
+    @Override
+    public void calculate(double begin, double end, DoubleUnaryOperator f, TaskProgressInfo<Double> taskProgressInfo) {
+        taskProgressInfo.startTiming();
+        double sum = 0;
+        for (double x = begin; x < end; x += step) {
+            if(Thread.interrupted()){
+                taskProgressInfo.stopTask();
+                return;
+            }
+            double y = f.applyAsDouble(x);
+            sum += step * y;
+            int progress = (int) (x / (end - begin) * 100);
+            taskProgressInfo.setProgress(progress);
+        }
+        taskProgressInfo.setTaskResult(sum);
     }
 }

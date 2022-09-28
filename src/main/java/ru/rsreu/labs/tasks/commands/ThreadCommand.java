@@ -1,6 +1,7 @@
 package ru.rsreu.labs.tasks.commands;
 
 import ru.rsreu.labs.commands.Command;
+import ru.rsreu.labs.exceptions.TaskIsOverException;
 import ru.rsreu.labs.exceptions.TaskNotFoundException;
 import ru.rsreu.labs.tasks.ThreadRepo;
 
@@ -12,5 +13,5 @@ public abstract class ThreadCommand implements Command {
     }
 
     @Override
-    public abstract void execute() throws TaskNotFoundException;
+    public abstract void execute() throws TaskNotFoundException, TaskIsOverException;
 }

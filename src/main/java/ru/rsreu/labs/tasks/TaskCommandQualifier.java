@@ -1,6 +1,7 @@
 package ru.rsreu.labs.tasks;
 
 import ru.rsreu.labs.commands.Command;
+import ru.rsreu.labs.exceptions.BadArgsException;
 import ru.rsreu.labs.exceptions.WrongCommandException;
 import ru.rsreu.labs.tasks.commands.AwaitCommand;
 import ru.rsreu.labs.tasks.commands.ExitCommand;
@@ -17,25 +18,39 @@ public class TaskCommandQualifier {
     }
 
     public Command qualify(String line) throws WrongCommandException {
-        try {
-            String[] substrings = line.split(" ", 2);
-            String commandEntry = substrings[0];
-            if (commandEntry.equals("exit")) {
-                return new ExitCommand(repo);
-            }
-            String[] parameters = substrings[1].split(" ");
-            if (commandEntry.equals("start")) {
+        String[] substrings = line.split(" ", 2);
+        if (substrings.length == 0) {
+            throw new WrongCommandException();
+        }
+        String commandEntry = substrings[0];
+        if (commandEntry.equals("exit")) {
+            return new ExitCommand(repo);
+        }
+
+        if (substrings.length < 2) {
+            throw new WrongCommandException();
+        }
+        String[] parameters = substrings[1].split(" ");
+        if (parameters.length == 0) {
+            throw new WrongCommandException();
+        }
+        if (commandEntry.equals("start")) {
+            try {
                 int taskId = this.taskCreator.create(parameters);
                 return new StartCommand(repo, taskId);
+            } catch (BadArgsException ex){
+                throw new WrongCommandException();
             }
-            if (commandEntry.equals("await") || commandEntry.equals("stop")) {
+        }
+        if (commandEntry.equals("await") || commandEntry.equals("stop")) {
+            try {
                 int id = Integer.parseInt(parameters[0]);
                 if (commandEntry.equals("await")) return new AwaitCommand(repo, id);
                 return new StopCommand(repo, id);
+            } catch (NumberFormatException ex) {
+                throw new WrongCommandException();
             }
-            throw new WrongCommandException();
-        } catch (Exception ignore) {
-            throw new WrongCommandException();
         }
+        throw new WrongCommandException();
     }
 }

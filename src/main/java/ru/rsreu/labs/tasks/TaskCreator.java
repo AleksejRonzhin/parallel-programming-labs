@@ -1,5 +1,7 @@
 package ru.rsreu.labs.tasks;
 
+import ru.rsreu.labs.exceptions.BadArgsException;
+
 public abstract class TaskCreator {
     protected ThreadRepo repo;
 
@@ -11,5 +13,5 @@ public abstract class TaskCreator {
         return repo;
     }
 
-    public abstract int create(String[] args);
+    public abstract int create(String[] args) throws BadArgsException;
 }

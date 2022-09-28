@@ -9,7 +9,7 @@ import ru.rsreu.labs.tasks.progress.TaskProgressLogger;
 
 public class PiCalculatingTaskWithLogCreator extends TaskCreator {
     private static final double STEP = 1E-9;
-    private final TaskProgressLogger taskProgressLogger = new TaskProgressLogger();
+    private final TaskProgressLogger<Double> taskProgressLogger = new TaskProgressLogger<>();
 
     public PiCalculatingTaskWithLogCreator(ThreadRepo repo) {
         super(repo);
@@ -26,6 +26,11 @@ public class PiCalculatingTaskWithLogCreator extends TaskCreator {
 
             int taskId = this.repo.create(target);
             taskProgressInfo.setTaskName(String.format("Pi calculating task %d", taskId));
+            taskProgressInfo.setTaskInterruptedListeners(event -> System.out.printf("%s interrupted\n", event.getSource().getTaskName()));
+            taskProgressInfo.setTaskCompletedListener(event -> {
+                TaskProgressInfo<Double> taskInfo = event.getSource();
+                System.out.printf("%s completed. Result: %s. Time: %d ms.\n", taskInfo.getTaskName(), taskInfo.getTaskResult().get(), taskInfo.getTime().get());
+            });
             return taskId;
         } catch (NumberFormatException ex) {
             throw new BadArgsException();

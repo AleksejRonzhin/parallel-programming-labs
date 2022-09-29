@@ -3,15 +3,15 @@ package ru.rsreu.labs.tasks.progress;
 import java.util.*;
 import java.util.function.Function;
 
-public class GeneralProgress<T> extends TaskProgress<T> {
-    private final Map<TaskProgress<T>, Integer> progresses;
+public class GeneralProgress extends TaskProgress {
+    private final Map<TaskProgress, Integer> progresses;
 
-    public GeneralProgress(Collection<TaskProgress<T>> progresses, Function<Collection<T>, T> resultMapper) {
+    public GeneralProgress(Collection<TaskProgress> progresses) {
         this.progresses = new HashMap<>();
-        for (TaskProgress<T> progress : progresses) {
+        for (TaskProgress progress : progresses) {
             this.progresses.put(progress, 0);
         }
-        for (TaskProgress<T> progress : progresses) {
+        for (TaskProgress progress : progresses) {
             progress.setTaskProgressListener(event -> {
                 this.progresses.put(event.getSource(), event.getProgress());
                 updateGeneralProgress();

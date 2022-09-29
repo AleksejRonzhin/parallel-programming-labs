@@ -13,7 +13,7 @@ public class CircleAreaPiCalculator {
         this.radius = radius;
     }
 
-    public double calculate(TaskProgress<Double> taskProgress) throws InterruptedException {
+    public double calculate(TaskProgress taskProgress) throws InterruptedException {
         return calculateCircleArea(taskProgress) / (radius * radius);
     }
 
@@ -21,7 +21,7 @@ public class CircleAreaPiCalculator {
         return calculateCircleArea() / (radius * radius);
     }
 
-    private double calculateCircleArea(TaskProgress<Double> taskProgress) throws InterruptedException {
+    private double calculateCircleArea(TaskProgress taskProgress) throws InterruptedException {
         DoubleUnaryOperator circleEquation = x -> Math.sqrt(radius * radius - x * x);
         double sectorArea = integralCalculator.calculate(0, radius, circleEquation, taskProgress);
         return sectorArea * 4;

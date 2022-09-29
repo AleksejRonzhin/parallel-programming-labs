@@ -26,7 +26,7 @@ public class RiemannSumIntegralCalculator implements IntegralCalculator {
     }
 
     @Override
-    public double calculate(double begin, double end, DoubleUnaryOperator f, TaskProgress<Double> taskProgress) throws InterruptedException {
+    public double calculate(double begin, double end, DoubleUnaryOperator f, TaskProgress taskProgress) throws InterruptedException {
         double sum = 0;
         for (double x = begin; x < end; x += step) {
             if (Thread.interrupted()) {

@@ -7,5 +7,5 @@ import java.util.function.DoubleUnaryOperator;
 public interface IntegralCalculator {
     double calculate(double begin, double end, DoubleUnaryOperator f) throws InterruptedException;
 
-    double calculate(double begin, double end, DoubleUnaryOperator f, TaskProgress<Double> taskProgress) throws InterruptedException;
+    double calculate(double begin, double end, DoubleUnaryOperator f, TaskProgress taskProgress) throws InterruptedException;
 }

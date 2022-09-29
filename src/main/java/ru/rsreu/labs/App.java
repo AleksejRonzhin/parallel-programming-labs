@@ -11,15 +11,15 @@ import java.util.Collection;
 public class App {
 
     public static void main(String[] args) {
-        TaskProgress<Double> progressInfo = new TaskProgress<>();
-        TaskProgress<Double> progressInfo2 = new TaskProgress<>();
-        TaskProgress<Double> progressInfo3 = new TaskProgress<>();
-        Collection<TaskProgress<Double>> progresses = new ArrayList<>();
+        TaskProgress progressInfo = new TaskProgress();
+        TaskProgress progressInfo2 = new TaskProgress();
+        TaskProgress progressInfo3 = new TaskProgress();
+        Collection<TaskProgress> progresses = new ArrayList<>();
         progresses.add(progressInfo);
         progresses.add(progressInfo2);
         progresses.add(progressInfo3);
-        TaskProgressLogger<Double> logger = new TaskProgressLogger<>();
-        GeneralProgress<Double> generalProgress = new GeneralProgress<>(progresses, App::sum);
+        TaskProgressLogger logger = new TaskProgressLogger();
+        GeneralProgress generalProgress = new GeneralProgress(progresses);
         logger.logProgress(generalProgress, "general task");
         logger.logProgress(progressInfo, "first task");
 

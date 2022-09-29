@@ -19,9 +19,10 @@ public class ProgressSegmentationHelper {
         if (stepCount < 2) return new int[0];
         int[] limits = new int[stepCount];
         int step = (MAX_PROGRESS - MIN_PROGRESS) / stepCount;
-        for (int i = 0; i < stepCount; i++) {
+        for (int i = 0; i < stepCount - 1; i++) {
             limits[i] = MIN_PROGRESS + i * step + step;
         }
+        limits[stepCount - 1] = MAX_PROGRESS;
         return limits;
     }
 
@@ -32,6 +33,7 @@ public class ProgressSegmentationHelper {
 
         while (progress >= progressLimits[nextLimitIndex]) {
             nextLimitIndex++;
+            if (nextLimitIndex >= progressLimits.length) return true;
         }
         return true;
     }

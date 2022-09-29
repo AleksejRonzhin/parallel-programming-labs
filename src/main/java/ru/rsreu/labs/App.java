@@ -2,7 +2,7 @@ package ru.rsreu.labs;
 
 import ru.rsreu.labs.integrals.CircleAreaPiCalculator;
 import ru.rsreu.labs.tasks.progress.GeneralProgress;
-import ru.rsreu.labs.tasks.progress.TaskProgressInfo;
+import ru.rsreu.labs.tasks.progress.TaskProgress;
 import ru.rsreu.labs.tasks.progress.TaskProgressLogger;
 
 import java.util.ArrayList;
@@ -11,25 +11,37 @@ import java.util.Collection;
 public class App {
 
     public static void main(String[] args) {
-        TaskProgressInfo<Double> progressInfo = new TaskProgressInfo<>();
-        TaskProgressInfo<Double> progressInfo2 = new TaskProgressInfo<>();
-        TaskProgressInfo<Double> progressInfo3 = new TaskProgressInfo<>();
-        Collection<TaskProgressInfo<Double>> progresses = new ArrayList<>();
+        TaskProgress<Double> progressInfo = new TaskProgress<>();
+        TaskProgress<Double> progressInfo2 = new TaskProgress<>();
+        TaskProgress<Double> progressInfo3 = new TaskProgress<>();
+        Collection<TaskProgress<Double>> progresses = new ArrayList<>();
         progresses.add(progressInfo);
         progresses.add(progressInfo2);
         progresses.add(progressInfo3);
         TaskProgressLogger<Double> logger = new TaskProgressLogger<>();
         GeneralProgress<Double> generalProgress = new GeneralProgress<>(progresses, App::sum);
-        logger.logProgress(generalProgress);
-        generalProgress.startTiming();
-        new Thread(() -> {
-            new CircleAreaPiCalculator(1E-9, 1).calculate(progressInfo);
-        }).start();
+        logger.logProgress(generalProgress, "general task");
+        logger.logProgress(progressInfo, "first task");
 
         new Thread(() -> {
-            new CircleAreaPiCalculator(1E-9, 1).calculate(progressInfo3);
-        }).start();
-        new CircleAreaPiCalculator(1E-9, 1).calculate(progressInfo2);
+            try {
+                new CircleAreaPiCalculator(1E-9, 1).calculate(progressInfo);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }}).start();
+        new Thread(() -> {
+            try {
+                new CircleAreaPiCalculator(1E-9, 1).calculate(progressInfo3);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }}).start();
+        new Thread(() -> {
+            try {
+                new CircleAreaPiCalculator(1E-9, 1).calculate(progressInfo2);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }}).start();
+
     }
 
     private static double sum(Collection<Double> values){

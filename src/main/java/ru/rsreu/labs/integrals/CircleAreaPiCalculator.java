@@ -1,6 +1,6 @@
 package ru.rsreu.labs.integrals;
 
-import ru.rsreu.labs.tasks.progress.TaskProgressInfo;
+import ru.rsreu.labs.tasks.progress.TaskProgress;
 
 import java.util.function.DoubleUnaryOperator;
 
@@ -13,23 +13,23 @@ public class CircleAreaPiCalculator {
         this.radius = radius;
     }
 
-    public void calculate(TaskProgressInfo<Double> taskProgressInfo) {
-        taskProgressInfo.addMapper(circleArea -> circleArea / (radius * radius));
-        calculateCircleArea(taskProgressInfo);
+    public double calculate(TaskProgress<Double> taskProgress) throws InterruptedException {
+        return calculateCircleArea(taskProgress) / (radius * radius);
     }
 
-    public double calculate(){
+    public double calculate() throws InterruptedException {
         return calculateCircleArea() / (radius * radius);
     }
 
-    private void calculateCircleArea(TaskProgressInfo<Double> taskProgressInfo) {
+    private double calculateCircleArea(TaskProgress<Double> taskProgress) throws InterruptedException {
         DoubleUnaryOperator circleEquation = x -> Math.sqrt(radius * radius - x * x);
-        taskProgressInfo.addMapper(sectorArea -> sectorArea * 4);
-        integralCalculator.calculate(0, radius, circleEquation, taskProgressInfo);
+        double sectorArea = integralCalculator.calculate(0, radius, circleEquation, taskProgress);
+        return sectorArea * 4;
     }
 
-    private double calculateCircleArea(){
+    private double calculateCircleArea() throws InterruptedException {
         DoubleUnaryOperator circleEquation = x -> Math.sqrt(radius * radius - x * x);
-        return integralCalculator.calculate(0, radius, circleEquation) * 4;
+        double sectorArea = integralCalculator.calculate(0, radius, circleEquation);
+        return sectorArea * 4;
     }
 }

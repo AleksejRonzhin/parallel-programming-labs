@@ -1,11 +1,11 @@
 package ru.rsreu.labs.integrals;
 
-import ru.rsreu.labs.tasks.progress.TaskProgressInfo;
+import ru.rsreu.labs.tasks.progress.TaskProgress;
 
 import java.util.function.DoubleUnaryOperator;
 
 public interface IntegralCalculator {
-    double calculate(double begin, double end, DoubleUnaryOperator f);
+    double calculate(double begin, double end, DoubleUnaryOperator f) throws InterruptedException;
 
-    void calculate(double begin, double end, DoubleUnaryOperator f, TaskProgressInfo<Double> taskProgressInfo);
+    double calculate(double begin, double end, DoubleUnaryOperator f, TaskProgress<Double> taskProgress) throws InterruptedException;
 }

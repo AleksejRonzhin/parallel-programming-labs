@@ -1,12 +1,12 @@
 package ru.rsreu.labs.tasks.commands;
 
 import ru.rsreu.labs.exceptions.TaskNotFoundException;
-import ru.rsreu.labs.tasks.ThreadRepo;
+import ru.rsreu.labs.tasks.TaskRepository;
 
 public class StartCommand extends ThreadCommand {
     private final int taskId;
 
-    public StartCommand(ThreadRepo repo, int taskId) {
+    public StartCommand(TaskRepository repo, int taskId) {
         super(repo);
         this.taskId = taskId;
     }

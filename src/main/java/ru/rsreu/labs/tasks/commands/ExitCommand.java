@@ -1,9 +1,9 @@
 package ru.rsreu.labs.tasks.commands;
 
-import ru.rsreu.labs.tasks.ThreadRepo;
+import ru.rsreu.labs.tasks.TaskRepository;
 
 public class ExitCommand extends ThreadCommand {
-    public ExitCommand(ThreadRepo repo) {
+    public ExitCommand(TaskRepository repo) {
         super(repo);
     }
 

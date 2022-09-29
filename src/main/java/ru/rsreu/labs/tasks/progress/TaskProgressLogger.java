@@ -1,9 +1,7 @@
 package ru.rsreu.labs.tasks.progress;
 
 public class TaskProgressLogger<T> {
-    public void logProgress(TaskProgressInfo<T> task) {
-        task.setTaskProgressListener(event -> {
-            System.out.printf("Progress %s: %d\n", event.getSource().getTaskName(), event.getProgress());
-        });
+    public void logProgress(TaskProgress<T> progress, String taskName) {
+        progress.setTaskProgressListener(event -> System.out.printf("Progress %s: %d\n", taskName, event.getProgress()));
     }
 }

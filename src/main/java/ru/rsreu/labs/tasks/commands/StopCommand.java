@@ -2,12 +2,12 @@ package ru.rsreu.labs.tasks.commands;
 
 import ru.rsreu.labs.exceptions.TaskIsOverException;
 import ru.rsreu.labs.exceptions.TaskNotFoundException;
-import ru.rsreu.labs.tasks.ThreadRepo;
+import ru.rsreu.labs.tasks.TaskRepository;
 
 public class StopCommand extends ThreadCommand {
     private final int threadId;
 
-    public StopCommand(ThreadRepo repo, int threadId) {
+    public StopCommand(TaskRepository repo, int threadId) {
         super(repo);
         this.threadId = threadId;
     }

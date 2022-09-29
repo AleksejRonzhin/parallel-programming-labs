@@ -4,15 +4,13 @@ import ru.rsreu.labs.commands.Command;
 import ru.rsreu.labs.commands.EmptyCommand;
 import ru.rsreu.labs.exceptions.TaskIsOverException;
 import ru.rsreu.labs.exceptions.TaskNotFoundException;
+import ru.rsreu.labs.exceptions.UnknownCommandException;
 import ru.rsreu.labs.exceptions.WrongCommandException;
-import ru.rsreu.labs.integrals.CircleAreaPiCalculator;
 import ru.rsreu.labs.tasks.TaskCommandQualifier;
 import ru.rsreu.labs.tasks.TaskCreator;
-import ru.rsreu.labs.tasks.ThreadRepo;
+import ru.rsreu.labs.tasks.TaskRepository;
 import ru.rsreu.labs.tasks.commands.AwaitCommand;
 import ru.rsreu.labs.tasks.pi.PiCalculatingTaskCreator;
-import ru.rsreu.labs.tasks.pi.PiCalculatingTaskWithLogCreator;
-import ru.rsreu.labs.tasks.progress.TaskProgressLogger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,8 +18,8 @@ import java.util.Scanner;
 
 public class App {
     private final InputStream inputStream = System.in;
-    private final ThreadRepo repo = new ThreadRepo();
-    private final TaskCreator taskCreator = new PiCalculatingTaskWithLogCreator(repo);
+    private final TaskRepository repo = new TaskRepository();
+    private final TaskCreator taskCreator = new PiCalculatingTaskCreator(repo);
     private final TaskCommandQualifier taskCommandQualifier = new TaskCommandQualifier(taskCreator);
     private final Scanner scanner = new Scanner(inputStream);
 
@@ -46,6 +44,8 @@ public class App {
                 }
             } catch (WrongCommandException ex) {
                 System.out.println("Wrong command");
+            } catch (UnknownCommandException ex){
+                System.out.println("Unknown command");
             }
         } while (!command.needExit());
     }

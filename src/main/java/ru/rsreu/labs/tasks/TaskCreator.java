@@ -3,13 +3,13 @@ package ru.rsreu.labs.tasks;
 import ru.rsreu.labs.exceptions.BadArgsException;
 
 public abstract class TaskCreator {
-    protected ThreadRepo repo;
+    protected TaskRepository repo;
 
-    protected TaskCreator(ThreadRepo repo) {
+    protected TaskCreator(TaskRepository repo) {
         this.repo = repo;
     }
 
-    public ThreadRepo getRepo() {
+    public TaskRepository getRepo() {
         return repo;
     }
 

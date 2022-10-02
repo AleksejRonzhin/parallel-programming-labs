@@ -33,9 +33,8 @@ public class Task {
         this.thread.interrupt();
     }
 
-    public void await() {
-        while (thread.isAlive()) {
-        }
+    public void await() throws InterruptedException {
+        this.thread.join(10000);
     }
 
     public boolean isFinished() {

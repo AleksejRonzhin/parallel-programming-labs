@@ -32,7 +32,7 @@ public class TaskRepository {
         tasks.forEach(Task::stop);
     }
 
-    public void await(int id) throws TaskNotFoundException, TaskIsOverException {
+    public void await(int id) throws TaskNotFoundException, TaskIsOverException, InterruptedException {
         Task task = getNotFinishedTaskById(id);
         task.await();
     }

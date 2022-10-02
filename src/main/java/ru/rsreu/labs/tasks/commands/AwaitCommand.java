@@ -5,16 +5,20 @@ import ru.rsreu.labs.exceptions.TaskNotFoundException;
 import ru.rsreu.labs.tasks.TaskRepository;
 
 public class AwaitCommand extends ThreadCommand {
-    private final int threadId;
+    private final int taskId;
 
     public AwaitCommand(TaskRepository repo, int threadId) {
         super(repo);
-        this.threadId = threadId;
+        this.taskId = threadId;
     }
 
     @Override
     public void execute() throws TaskNotFoundException, TaskIsOverException {
-        repo.await(threadId);
-        System.out.printf("The wait task %d is over\n", threadId);
+        try {
+            repo.await(taskId);
+            System.out.printf("The wait task %d is over\n", taskId);
+        } catch (InterruptedException e) {
+            System.out.printf("The task %d is interrupted\n", taskId);
+        }
     }
 }

@@ -34,7 +34,7 @@ public class RiemannSumIntegralCalculator implements IntegralCalculator {
             }
             double y = f.applyAsDouble(x);
             sum += step * y;
-            int progress = (int) (x / (end - begin) * 100) + 1;
+            int progress = (int) ((x - begin) / (end - begin) * 100) + 1;
             taskProgress.setProgress(progress);
         }
         return sum;

@@ -1,21 +1,31 @@
 package ru.rsreu.labs.tasks.progress;
 
 import java.util.*;
-import java.util.function.Function;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class GeneralProgress extends TaskProgress {
     private final Map<TaskProgress, Integer> progresses;
+    private final Lock locker = new ReentrantLock();
 
     public GeneralProgress(Collection<TaskProgress> progresses) {
         this.progresses = new HashMap<>();
         for (TaskProgress progress : progresses) {
             this.progresses.put(progress, 0);
         }
+
         for (TaskProgress progress : progresses) {
-            progress.setTaskProgressListener(event -> {
-                this.progresses.put(event.getSource(), event.getProgress());
-                updateGeneralProgress();
-            });
+            progress.setTaskProgressListener(this::taskProgressEventHandler);
+        }
+    }
+
+    private void taskProgressEventHandler(TaskProgressEvent event){
+        locker.lock();
+        try {
+            this.progresses.put(event.getSource(), event.getProgress());
+            updateGeneralProgress();
+        } finally {
+            locker.unlock();
         }
     }
 

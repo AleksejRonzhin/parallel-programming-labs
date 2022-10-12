@@ -17,11 +17,13 @@ import java.util.stream.Collectors;
 public class PiCalculatingTaskSolver {
     private static final TaskProgressLogger logger = new TaskProgressLogger();
     private static final Function<Double, DoubleUnaryOperator> circleEquation = radius -> x -> Math.sqrt(radius * radius - x * x);
+    private static final Semaphore semaphore = new Semaphore(3);
 
 
     public double solve(int taskCount, double integrationStep, double radius) throws ExecutionException, InterruptedException {
         IntegralCalculator integralCalculator = new RiemannSumIntegralCalculator(integrationStep);
-        Collection<ProgressiveTask> progressiveTasks = createTasks(taskCount, radius, integralCalculator);
+        CountDownLatch latch = new CountDownLatch(taskCount);
+        Collection<ProgressiveTask> progressiveTasks = createTasks(taskCount, radius, integralCalculator, latch);
 
         Collection<Future<Double>> futures = progressiveTasks.stream().map(ProgressiveTask::getFuture).collect(Collectors.toList());
         Collection<TaskProgress> taskProgresses = progressiveTasks.stream().map(ProgressiveTask::getProgress).collect(Collectors.toList());
@@ -30,13 +32,13 @@ public class PiCalculatingTaskSolver {
         return sumFutures(futures) * 4 / radius / radius;
     }
 
-    private Collection<ProgressiveTask> createTasks(int taskCount, double radius, IntegralCalculator integralCalculator) {
+    private Collection<ProgressiveTask> createTasks(int taskCount, double radius, IntegralCalculator integralCalculator, CountDownLatch latch) {
         ExecutorService service = Executors.newFixedThreadPool(taskCount);
         List<ProgressiveTask> progressiveTasks = new ArrayList<>();
         double calculatingStep = radius / taskCount;
 
         for (int i = 0; i < taskCount; i++) {
-            ProgressiveTask progressiveTask = createTask(i, calculatingStep, radius, integralCalculator, service);
+            ProgressiveTask progressiveTask = createTask(i, calculatingStep, radius, integralCalculator, service, latch);
             progressiveTasks.add(progressiveTask);
         }
 
@@ -44,7 +46,7 @@ public class PiCalculatingTaskSolver {
         return progressiveTasks;
     }
 
-    private ProgressiveTask createTask(int taskNumber, double calculatingStep, double radius, IntegralCalculator integralCalculator, ExecutorService service) {
+    private ProgressiveTask createTask(int taskNumber, double calculatingStep, double radius, IntegralCalculator integralCalculator, ExecutorService service, CountDownLatch latch) {
         final double start = taskNumber * calculatingStep;
         final double end = start + calculatingStep;
         TaskProgress progress = new TaskProgress();
@@ -52,7 +54,17 @@ public class PiCalculatingTaskSolver {
 
         Callable<Double> target = () -> {
             try {
-                return integralCalculator.calculate(start, end, circleEquation.apply(radius), progress);
+                semaphore.acquire();
+                double res = integralCalculator.calculate(start, end, circleEquation.apply(radius), progress);
+                semaphore.release();
+
+                latch.countDown();
+                long startTime = System.currentTimeMillis();
+                latch.await();
+                long endTime = System.currentTimeMillis();
+                System.out.printf("Delay task %d: %dms.\n", taskNumber, endTime - startTime);
+
+                return res;
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }

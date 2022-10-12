@@ -26,10 +26,8 @@ public class PiCalculatingTaskSolver {
         for (int i = 0; i < taskCount; i++) {
             TaskProgress progress = new TaskProgress();
             progresses.add(progress);
-
             final double start = i * calculatingStep;
             final double end = start + calculatingStep;
-
             Runnable target = () -> {
                 try {
                     integralCalculator.calculate(start, end, circleEquation.apply(radius), progress, sumStorage);
@@ -37,19 +35,24 @@ public class PiCalculatingTaskSolver {
                     throw new RuntimeException(e);
                 }
             };
-
             Thread thread = new Thread(target);
             threads.add(thread);
             thread.start();
         }
 
-        GeneralProgress generalProgress = new GeneralProgress(progresses);
-        logger.logProgress(generalProgress, "general");
+        setGeneralProgressLog(progresses);
+        await(threads);
+        return sumStorage.getSum() * 4 / radius / radius;
+    }
 
+    private void await(Collection<Thread> threads) throws InterruptedException {
         for(Thread thread: threads){
             thread.join();
         }
+    }
 
-        return sumStorage.getSum() * 4 / radius / radius;
+    private void setGeneralProgressLog(Collection<TaskProgress> progresses){
+        GeneralProgress generalProgress = new GeneralProgress(progresses);
+        logger.logProgress(generalProgress, "general");
     }
 }

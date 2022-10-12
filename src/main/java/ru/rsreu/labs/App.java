@@ -1,13 +1,12 @@
 package ru.rsreu.labs;
 
-import java.util.concurrent.ExecutionException;
-
 public class App {
 
-    public static void main(String[] args) throws ExecutionException, InterruptedException {
+    public static void main(String[] args) throws InterruptedException {
         long startTime = System.currentTimeMillis();
-        double pi = new PiCalculatingTaskSolver().solve(5, 1E-9, 10);
+        double pi = new PiCalculatingTaskSolver().solve(5, 1E-8, 1);
         long endTime = System.currentTimeMillis();
         System.out.printf("Result: %s. Time: %d ms.", pi, endTime - startTime);
+
     }
 }

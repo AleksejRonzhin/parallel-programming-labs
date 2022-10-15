@@ -8,51 +8,71 @@ import ru.rsreu.labs.tasks.progress.TaskProgressLogger;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.DoubleUnaryOperator;
-import java.util.function.Function;
 
 public class PiCalculatingTaskSolver {
     private static final TaskProgressLogger logger = new TaskProgressLogger();
-    private static final Function<Double, DoubleUnaryOperator> circleEquation = radius -> x -> Math.sqrt(radius * radius - x * x);
 
-    public double solve(int taskCount, double integrationStep, double radius) throws InterruptedException {
-        IntegralCalculator integralCalculator = new RiemannSumIntegralCalculator(integrationStep);
+    private final IntegralCalculator integralCalculator;
+    private final DoubleUnaryOperator circleEquation;
+    private final double radius;
 
-        Collection<Thread> threads = new ArrayList<>();
-        Collection<TaskProgress> progresses = new ArrayList<>();
+    public PiCalculatingTaskSolver(double circleRadius, double integrationStep) {
+        this.integralCalculator = new RiemannSumIntegralCalculator(integrationStep);
+        this.circleEquation = x -> Math.sqrt(circleRadius * circleRadius - x * x);
+        this.radius = circleRadius;
+    }
 
-        double calculatingStep = radius / taskCount;
+    public double solve(int taskCount) throws InterruptedException, TimeoutException {
         SumStorage sumStorage = new SumStorage();
-        for (int i = 0; i < taskCount; i++) {
-            TaskProgress progress = new TaskProgress();
-            progresses.add(progress);
-            final double start = i * calculatingStep;
-            final double end = start + calculatingStep;
-            Runnable target = () -> {
-                try {
-                    integralCalculator.calculate(start, end, circleEquation.apply(radius), progress, sumStorage);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            };
-            Thread thread = new Thread(target);
-            threads.add(thread);
-            thread.start();
-        }
+        ExecutorService executorService = Executors.newFixedThreadPool(taskCount);
 
-        setGeneralProgressLog(progresses);
-        await(threads);
+        TaskProgress generalProgress = startGeneralTask(divideTask(taskCount, radius), executorService, sumStorage);
+        logger.logProgress(generalProgress, "general");
+
+        shutdownWithWaiting(executorService);
         return sumStorage.getSum() * 4 / radius / radius;
     }
 
-    private void await(Collection<Thread> threads) throws InterruptedException {
-        for(Thread thread: threads){
-            thread.join();
-        }
+    private Iterator<Range> divideTask(int taskCount, double radius) {
+        return RangeDivider.divide(new Range(0, radius), taskCount);
     }
 
-    private void setGeneralProgressLog(Collection<TaskProgress> progresses){
-        GeneralProgress generalProgress = new GeneralProgress(progresses);
-        logger.logProgress(generalProgress, "general");
+    private TaskProgress startGeneralTask(Iterator<Range> rangeIterator, ExecutorService executorService, SumStorage sumStorage) {
+        Collection<TaskProgress> progresses = new ArrayList<>();
+        rangeIterator.forEachRemaining(range -> {
+            TaskProgress progress = executeTaskOnRange(executorService, range, sumStorage);
+            progresses.add(progress);
+        });
+        return new GeneralProgress(progresses);
+    }
+
+    private TaskProgress executeTaskOnRange(ExecutorService executorService, Range range, SumStorage sumStorage) {
+        TaskProgress progress = new TaskProgress();
+        executorService.execute(createTask(range, progress, sumStorage));
+        return progress;
+    }
+
+    private Runnable createTask(Range range, TaskProgress progress, SumStorage storage) {
+        return () -> {
+            try {
+                integralCalculator.calculate(range, circleEquation, progress, storage);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        };
+    }
+
+    private void shutdownWithWaiting(ExecutorService executorService) throws InterruptedException, TimeoutException {
+        executorService.shutdown();
+        if (!executorService.awaitTermination(1, TimeUnit.MINUTES)){
+            executorService.shutdownNow();
+            throw new TimeoutException();
+        }
     }
 }

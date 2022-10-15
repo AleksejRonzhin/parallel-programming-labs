@@ -1,5 +1,6 @@
 package ru.rsreu.labs.integrals;
 
+import ru.rsreu.labs.Range;
 import ru.rsreu.labs.tasks.progress.TaskProgress;
 
 import java.util.function.DoubleUnaryOperator;
@@ -12,29 +13,17 @@ public class RiemannSumIntegralCalculator implements IntegralCalculator {
         this.step = step;
     }
 
-    @Override
-    public double calculate(double begin, double end, DoubleUnaryOperator f) throws InterruptedException {
-        double sum = 0;
-        for (double x = begin; x < end; x += step) {
-            if (Thread.interrupted()) {
-                throw new InterruptedException();
-            }
-            double y = f.applyAsDouble(x);
-            sum += step * y;
-        }
-        return sum;
-    }
 
     @Override
-    public double calculate(double begin, double end, DoubleUnaryOperator f, TaskProgress taskProgress) throws InterruptedException {
+    public double calculate(Range range, DoubleUnaryOperator f, TaskProgress taskProgress) throws InterruptedException {
         double sum = 0;
-        for (double x = begin; x < end; x += step) {
+        for (double x = range.getStart(); x < range.getEnd(); x += step) {
             if (Thread.interrupted()) {
                 throw new InterruptedException();
             }
             double y = f.applyAsDouble(x);
             sum += step * y;
-            int progress = (int) ((x - begin) / (end - begin) * 100) + 1;
+            int progress = (int) ((x - range.getStart()) / range.getLength() * 100) + 1;
             taskProgress.setProgress(progress);
         }
         return sum;

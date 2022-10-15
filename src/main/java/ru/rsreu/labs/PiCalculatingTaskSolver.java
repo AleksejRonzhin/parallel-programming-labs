@@ -8,83 +8,79 @@ import ru.rsreu.labs.tasks.progress.TaskProgressLogger;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
+import java.util.Iterator;
 import java.util.concurrent.*;
 import java.util.function.DoubleUnaryOperator;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
+import static ru.rsreu.labs.FutureUtils.sumFutures;
 
 public class PiCalculatingTaskSolver {
     private static final TaskProgressLogger logger = new TaskProgressLogger();
-    private static final Function<Double, DoubleUnaryOperator> circleEquation = radius -> x -> Math.sqrt(radius * radius - x * x);
-    private static final Semaphore semaphore = new Semaphore(3);
+    private final IntegralCalculator integralCalculator;
+    private final DoubleUnaryOperator circleEquation;
+    private final Semaphore semaphore;
+    private final double radius;
 
+    public PiCalculatingTaskSolver(double circleRadius, double integrationStep, int permits) {
+        this.integralCalculator = new RiemannSumIntegralCalculator(integrationStep);
+        this.circleEquation = x -> Math.sqrt(circleRadius * circleRadius - x * x);
+        this.radius = circleRadius;
+        this.semaphore = new Semaphore(permits);
+    }
 
-    public double solve(int taskCount, double integrationStep, double radius) throws ExecutionException, InterruptedException {
-        IntegralCalculator integralCalculator = new RiemannSumIntegralCalculator(integrationStep);
+    public double solve(int taskCount) throws InterruptedException, ExecutionException {
+        ExecutorService executorService = Executors.newFixedThreadPool(taskCount);
         CountDownLatch latch = new CountDownLatch(taskCount);
-        Collection<ProgressiveTask> progressiveTasks = createTasks(taskCount, radius, integralCalculator, latch);
+        Collection<ProgressiveTask> progressiveTasks = startGeneralTask(divideTask(taskCount, radius), executorService, latch);
 
-        Collection<Future<Double>> futures = progressiveTasks.stream().map(ProgressiveTask::getFuture).collect(Collectors.toList());
-        Collection<TaskProgress> taskProgresses = progressiveTasks.stream().map(ProgressiveTask::getProgress).collect(Collectors.toList());
+        Collection<Future<Double>> futures = progressiveTasks.stream().map(ProgressiveTask::getFuture).collect(toList());
+        Collection<TaskProgress> taskProgresses = progressiveTasks.stream().map(ProgressiveTask::getProgress).collect(toList());
 
-        logGeneralProgress(taskProgresses);
+        logger.logProgress(new GeneralProgress(taskProgresses), "general");
         return sumFutures(futures) * 4 / radius / radius;
     }
 
-    private Collection<ProgressiveTask> createTasks(int taskCount, double radius, IntegralCalculator integralCalculator, CountDownLatch latch) {
-        ExecutorService service = Executors.newFixedThreadPool(taskCount);
-        List<ProgressiveTask> progressiveTasks = new ArrayList<>();
-        double calculatingStep = radius / taskCount;
+    private Iterator<Range> divideTask(int taskCount, double radius) {
+        return RangeDivider.divide(new Range(0, radius), taskCount);
+    }
 
-        for (int i = 0; i < taskCount; i++) {
-            ProgressiveTask progressiveTask = createTask(i, calculatingStep, radius, integralCalculator, service, latch);
+    private Collection<ProgressiveTask> startGeneralTask(Iterator<Range> rangeIterator, ExecutorService executorService, CountDownLatch latch) {
+        Collection<ProgressiveTask> progressiveTasks = new ArrayList<>();
+        int numberTask = 1;
+        while (rangeIterator.hasNext()) {
+            ProgressiveTask progressiveTask = submitTaskOnRange(executorService, rangeIterator.next(), latch, numberTask++);
             progressiveTasks.add(progressiveTask);
         }
-
-        service.shutdown();
         return progressiveTasks;
     }
 
-    private ProgressiveTask createTask(int taskNumber, double calculatingStep, double radius, IntegralCalculator integralCalculator, ExecutorService service, CountDownLatch latch) {
-        final double start = taskNumber * calculatingStep;
-        final double end = start + calculatingStep;
+    private ProgressiveTask submitTaskOnRange(ExecutorService executorService, Range range, CountDownLatch latch, int numberTask) {
         TaskProgress progress = new TaskProgress();
-        logger.logProgress(progress, "task " + taskNumber);
+        logger.logProgress(progress, numberTask + " task");
+        Future<Double> future = executorService.submit(createTask(range, progress, latch, numberTask));
+        return new ProgressiveTask(future, progress);
+    }
 
-        Callable<Double> target = () -> {
+    private Callable<Double> createTask(Range range, TaskProgress progress, CountDownLatch latch, int numberTask) {
+        return () -> {
             try {
+
                 semaphore.acquire();
-                double res = integralCalculator.calculate(start, end, circleEquation.apply(radius), progress);
+                double result = integralCalculator.calculate(range, circleEquation, progress);
                 semaphore.release();
 
                 latch.countDown();
                 long startTime = System.currentTimeMillis();
                 latch.await();
                 long endTime = System.currentTimeMillis();
-                System.out.printf("Delay task %d: %dms.\n", taskNumber, endTime - startTime);
+                System.out.printf("Delay task %d: %dms.\n", numberTask, endTime - startTime);
 
-                return res;
+                return result;
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
         };
-
-        Future<Double> future = service.submit(target);
-        return new ProgressiveTask(future, progress);
-    }
-
-    private void logGeneralProgress(Collection<TaskProgress> progresses) {
-        GeneralProgress generalProgress = new GeneralProgress(progresses);
-        logger.logProgress(generalProgress, "general task");
-    }
-
-    private double sumFutures(Collection<Future<Double>> futures) throws ExecutionException, InterruptedException {
-        double sectorArea = 0;
-        for (Future<Double> future : futures) {
-            sectorArea += future.get();
-        }
-        return sectorArea;
     }
 
     private static class ProgressiveTask {

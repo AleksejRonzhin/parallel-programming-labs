@@ -79,9 +79,12 @@ public class PiCalculatingTaskSolver {
 
     private <T> T callWithSemaphore(Callable<T> callable) throws Exception {
         semaphore.acquire();
-        T result = callable.call();
-        semaphore.release();
-        return result;
+        try {
+            return callable.call();
+        }
+        finally {
+            semaphore.release();
+        }
     }
 
     private long getDelay(CountDownLatch latch) throws InterruptedException {

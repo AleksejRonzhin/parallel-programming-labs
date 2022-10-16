@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 public class FirstAdditionalTaskRunner {
+    private static final int MAX_COUNT = 10;
 
     private final Collection<Thread> threads = new ArrayList<>();
     private int count = 0;
@@ -28,7 +29,6 @@ public class FirstAdditionalTaskRunner {
             threads.add(thread);
             thread.start();
         }
-
         for (Thread thread : threads) {
             thread.join();
         }
@@ -43,6 +43,7 @@ public class FirstAdditionalTaskRunner {
                 if (Thread.interrupted()) {
                     throw new InterruptedException();
                 }
+
                 if (symbolCode == (int) 'a') {
                     incrementCount();
                 }
@@ -55,13 +56,17 @@ public class FirstAdditionalTaskRunner {
     }
 
     private synchronized void incrementCount() {
-        if (count >= 10) return;
+        if (count >= MAX_COUNT) return;
         count++;
-        if (count >= 10) {
-            System.out.println("Found 10 symbols");
-            for (Thread thread : threads) {
-                thread.interrupt();
-            }
+        if (count >= MAX_COUNT) {
+            System.out.printf("Found %d symbols\n", count);
+            stopThreads();
+        }
+    }
+
+    private void stopThreads(){
+        for (Thread thread : threads) {
+            thread.interrupt();
         }
     }
 }

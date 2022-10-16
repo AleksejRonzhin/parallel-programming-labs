@@ -4,10 +4,18 @@ import java.io.FileReader;
 import java.io.IOException;
 
 public class SecondAdditionalTaskRunner {
+    private final Object lock = new Object();
     private int lastThread;
 
     public static void main(String[] args) {
         new SecondAdditionalTaskRunner().start(args);
+    }
+
+    public void setLastThread(int lastThread) {
+        synchronized (lock) {
+            this.lastThread = lastThread;
+            lock.notify();
+        }
     }
 
     private void start(String[] filenames) {
@@ -19,16 +27,17 @@ public class SecondAdditionalTaskRunner {
         }
 
         Thread thread = new Thread(() -> {
-            while (true) {
+            synchronized (lock) {
                 try {
-                    Thread.sleep(1000);
-                    System.out.print(lastThread + " ");
+                    while (true) {
+                        lock.wait();
+                        System.out.print(this.lastThread + " ");
+                    }
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
             }
         });
-
         thread.setDaemon(true);
         thread.start();
     }
@@ -38,14 +47,13 @@ public class SecondAdditionalTaskRunner {
             FileReader fileReader = new FileReader(filename);
             int symbolCode = fileReader.read();
             while (symbolCode != -1) {
-                Thread.sleep(1000);
                 if ((char) symbolCode == 'a') {
-                    lastThread = threadNumber;
+                    setLastThread(threadNumber);
                 }
                 symbolCode = fileReader.read();
             }
             fileReader.close();
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }

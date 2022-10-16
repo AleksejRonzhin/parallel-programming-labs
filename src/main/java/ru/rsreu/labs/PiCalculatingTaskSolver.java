@@ -32,6 +32,7 @@ public class PiCalculatingTaskSolver {
     public double solve(int taskCount) throws InterruptedException, ExecutionException {
         ExecutorService executorService = Executors.newFixedThreadPool(taskCount);
         CountDownLatch latch = new CountDownLatch(taskCount);
+
         Collection<ProgressiveTask> progressiveTasks = startGeneralTask(divideTask(taskCount, radius), executorService, latch);
 
         Collection<Future<Double>> futures = progressiveTasks.stream().map(ProgressiveTask::getFuture).collect(toList());
@@ -65,22 +66,30 @@ public class PiCalculatingTaskSolver {
     private Callable<Double> createTask(Range range, TaskProgress progress, CountDownLatch latch, int numberTask) {
         return () -> {
             try {
-
-                semaphore.acquire();
-                double result = integralCalculator.calculate(range, circleEquation, progress);
-                semaphore.release();
-
-                latch.countDown();
-                long startTime = System.currentTimeMillis();
-                latch.await();
-                long endTime = System.currentTimeMillis();
-                System.out.printf("Delay task %d: %dms.\n", numberTask, endTime - startTime);
-
+                double result = callWithSemaphore(
+                        () -> integralCalculator.calculate(range, circleEquation, progress)
+                );
+                System.out.printf("Delay task %d: %dms.\n", numberTask, getDelay(latch));
                 return result;
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
         };
+    }
+
+    private <T> T callWithSemaphore(Callable<T> callable) throws Exception {
+        semaphore.acquire();
+        T result = callable.call();
+        semaphore.release();
+        return result;
+    }
+
+    private long getDelay(CountDownLatch latch) throws InterruptedException {
+        latch.countDown();
+        long startTime = System.currentTimeMillis();
+        latch.await();
+        long endTime = System.currentTimeMillis();
+        return endTime - startTime;
     }
 
     private static class ProgressiveTask {

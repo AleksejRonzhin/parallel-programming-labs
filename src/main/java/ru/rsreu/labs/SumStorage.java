@@ -7,7 +7,7 @@ public class SumStorage {
         sum += value;
     }
 
-    public double getSum() {
+    public synchronized double getSum() {
         return sum;
     }
 }

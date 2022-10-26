@@ -2,6 +2,8 @@ package ru.rsreu.labs;
 
 import ru.rsreu.labs.integrals.IntegralCalculator;
 import ru.rsreu.labs.integrals.RiemannSumIntegralCalculator;
+import ru.rsreu.labs.concurrent.CountDownLatch;
+import ru.rsreu.labs.concurrent.Semaphore;
 import ru.rsreu.labs.tasks.progress.GeneralProgress;
 import ru.rsreu.labs.tasks.progress.TaskProgress;
 import ru.rsreu.labs.tasks.progress.TaskProgressLogger;

@@ -1,12 +1,12 @@
 package ru.rsreu.labs.tasks.progress;
 
+import ru.rsreu.labs.concurrent.Lock;
+
 import java.util.*;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class GeneralProgress extends TaskProgress {
     private final Map<TaskProgress, Integer> progresses;
-    private final Lock locker = new ReentrantLock();
+    private final Lock locker = new Lock();
 
     public GeneralProgress(Collection<TaskProgress> progresses) {
         this.progresses = new HashMap<>();
@@ -20,7 +20,11 @@ public class GeneralProgress extends TaskProgress {
     }
 
     private void taskProgressEventHandler(TaskProgressEvent event){
-        locker.lock();
+        try {
+            locker.lock();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         try {
             this.progresses.put(event.getSource(), event.getProgress());
             updateGeneralProgress();

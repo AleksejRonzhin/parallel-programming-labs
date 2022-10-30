@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 
 public class SemaphoreTest {
     @Test
-    public void stressTest(){
+    public void test(){
 
     }
 

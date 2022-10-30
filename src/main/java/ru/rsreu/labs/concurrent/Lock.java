@@ -4,6 +4,10 @@ public class Lock {
     private final Object lock = new Object();
     private boolean isLocked = false;
 
+    public boolean isLocked() {
+        return isLocked;
+    }
+
     public void lock() throws InterruptedException {
         synchronized (lock){
             while(isLocked){

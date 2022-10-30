@@ -23,9 +23,9 @@ public class CountDownLatchTest {
         int threadCount = 50;
         CountDownLatch latch = new CountDownLatch(threadCount);
         Collection<Thread> threads = createCountDownLatchThreads(threadCount, latch);
-        startThreads(threads);
+        ThreadUtils.startThreads(threads);
         Thread.sleep(1000);
-        Assertions.assertTrue(allThreadsIsState(threads, Thread.State.TERMINATED));
+        Assertions.assertTrue(ThreadUtils.allThreadsIsState(threads, Thread.State.TERMINATED));
     }
 
     private Collection<Thread> createCountDownLatchThreads(int threadCount, CountDownLatch latch) {
@@ -50,9 +50,9 @@ public class CountDownLatchTest {
         int threadCount = 50;
         CountDownLatch latch = new CountDownLatch(threadCount + 1);
         Collection<Thread> threads = createCountDownLatchThreads(threadCount, latch);
-        startThreads(threads);
+        ThreadUtils.startThreads(threads);
         Thread.sleep(1000);
-        Assertions.assertTrue(allThreadsIsState(threads, Thread.State.WAITING));
+        Assertions.assertTrue(ThreadUtils.allThreadsIsState(threads, Thread.State.WAITING));
     }
 
     @Test
@@ -101,25 +101,11 @@ public class CountDownLatchTest {
         return tasks;
     }
 
-
     private Callable<Long> getFinishedTimeCountDownLatchTarget(CountDownLatch latch) {
         return () -> {
             countDownLatchTarget(latch);
             return System.currentTimeMillis();
         };
-    }
-
-    private void startThreads(Collection<Thread> threads) {
-        threads.forEach(Thread::start);
-    }
-
-    private boolean allThreadsIsState(Collection<Thread> threads, Thread.State state) {
-        for (Thread thread : threads) {
-            if (thread.getState() != state) {
-                return false;
-            }
-        }
-        return true;
     }
 
     @Test

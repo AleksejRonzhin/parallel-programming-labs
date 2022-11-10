@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class LockTest {
     @Test
@@ -21,10 +23,10 @@ public class LockTest {
 
     private Collection<Thread> createSummarizingThreads(int threadsCount, SumStorage sumStorage, Lock lock, int summarizingCount) {
         Collection<Thread> threads = new ArrayList<>();
-        for (int i = 0; i < threadsCount; i++){
+        for (int i = 0; i < threadsCount; i++) {
             threads.add(new Thread(() -> {
                 try {
-                    for(int j = 0; j < summarizingCount; j++){
+                    for (int j = 0; j < summarizingCount; j++) {
                         lock.lock();
                         sumStorage.add(1);
                         lock.unlock();
@@ -38,6 +40,51 @@ public class LockTest {
         return threads;
     }
 
+    @Test
+    public void twoThreadTest() throws InterruptedException {
+        CountDownLatch firstThreadCdl = new CountDownLatch(1);
+        CountDownLatch secondThreadCdl = new CountDownLatch(1);
+        AtomicInteger atomicInteger = new AtomicInteger(0);
+        Lock lock = new Lock();
+
+        Thread firstThread = getFirstThread(lock, firstThreadCdl, atomicInteger);
+        Thread secondThread = getSecondThread(lock, secondThreadCdl, atomicInteger);
+        firstThread.start();
+        secondThread.start();
+
+        firstThreadCdl.await();
+        Assertions.assertEquals(1, atomicInteger.get());
+        secondThreadCdl.countDown();
+
+        secondThread.join();
+        Assertions.assertEquals(2, atomicInteger.get());
+    }
+
+    public Thread getFirstThread(Lock lock, CountDownLatch countDownLatch, AtomicInteger atomicInteger) {
+        return new Thread(() -> {
+            try {
+                lock.lock();
+                atomicInteger.set(1);
+                countDownLatch.countDown();
+                lock.unlock();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    public Thread getSecondThread(Lock lock, CountDownLatch countDownLatch, AtomicInteger atomicInteger) {
+        return new Thread(() -> {
+            try {
+                countDownLatch.await();
+                lock.lock();
+                atomicInteger.set(2);
+                lock.unlock();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
 
     @Test
     public void lockTest() throws InterruptedException {
@@ -55,7 +102,7 @@ public class LockTest {
     }
 
     @Test
-    public void tryLockTest(){
+    public void tryLockTest() {
         Lock lock = new Lock();
         Assertions.assertTrue(lock.tryLock());
     }

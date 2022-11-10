@@ -27,6 +27,10 @@ public class Semaphore {
     }
 
     public boolean tryAcquire() {
+        if (permits == 0) {
+            return false;
+        }
+
         synchronized (lock) {
             if (permits == 0) {
                 return false;

@@ -5,7 +5,9 @@ public class Lock {
     private boolean isLocked = false;
 
     public boolean isLocked() {
-        return isLocked;
+        synchronized (lock){
+            return isLocked;
+        }
     }
 
     public void lock() throws InterruptedException {

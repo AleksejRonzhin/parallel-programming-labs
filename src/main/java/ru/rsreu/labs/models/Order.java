@@ -1,6 +1,8 @@
 package ru.rsreu.labs.models;
 
 import javax.annotation.concurrent.Immutable;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Immutable
 public class Order {
@@ -30,5 +32,25 @@ public class Order {
 
     public CurrencyPair getCurrencyPair(){
         return currencyPair;
+    }
+
+    public BigDecimal getTargetValue() {
+        return orderInfo.getTargetValue();
+    }
+
+    public BigDecimal getSourceValue() {
+        return orderInfo.getSourceValue();
+    }
+
+    public BigDecimal getSourceToTargetRate() {
+        return orderInfo.getSourceToTargetRate();
+    }
+
+    public BigDecimal getTargetToSourceRate(){
+        return orderInfo.getTargetToSourceRate();
+    }
+
+    public Client getClient() {
+        return orderInfo.getClient();
     }
 }

@@ -7,6 +7,7 @@ import ru.rsreu.labs.models.OrderInfo;
 import ru.rsreu.labs.sync.SyncExchange;
 
 import java.math.BigDecimal;
+import java.util.Map;
 
 public class App {
 
@@ -17,17 +18,27 @@ public class App {
         exchange.putMoney(client, Currency.RUB, BigDecimal.valueOf(1000));
 
         Client client1 = exchange.createClient();
-        exchange.putMoney(client1, Currency.USD, BigDecimal.valueOf(10));
+        exchange.putMoney(client1, Currency.USD, BigDecimal.valueOf(100));
+
+        Map<Currency, BigDecimal> clientMoney = exchange.getClientMoney(client);
+        Map<Currency, BigDecimal> client1Money = exchange.getClientMoney(client1);
+        System.out.println("client 1 " + clientMoney);
+        System.out.println("client 2 " + client1Money);
 
         Order order = new Order(Currency.USD,
-                Currency.RUB, new OrderInfo(BigDecimal.valueOf(80),
-                BigDecimal.valueOf(3.0/80), client1));
+                Currency.RUB, new OrderInfo(BigDecimal.valueOf(130),
+                BigDecimal.valueOf(1.0/65), client1));
 
         exchange.createOrder(order);
 
-        Order order2 = new Order(Currency.RUB, Currency.USD, new OrderInfo(BigDecimal.valueOf(2), BigDecimal.valueOf(1), client));
+        System.out.println("client 1 " + clientMoney);
+        System.out.println("client 2 " + client1Money);
+
+        Order order2 = new Order(Currency.RUB, Currency.USD, new OrderInfo(BigDecimal.valueOf(2), BigDecimal.valueOf(66), client));
 
         exchange.createOrder(order2);
-        System.out.println();
+
+        System.out.println("client 1 " + clientMoney);
+        System.out.println("client 2 " + client1Money);
     }
 }

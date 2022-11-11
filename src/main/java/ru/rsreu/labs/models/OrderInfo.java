@@ -1,15 +1,16 @@
 package ru.rsreu.labs.models;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 public class OrderInfo {
     private final BigDecimal targetValue;
-    private final BigDecimal rate; // source/target
+    private final BigDecimal sourceToTargetRate; // source/target
     private final Client client;
 
-    public OrderInfo(BigDecimal targetValue, BigDecimal rate, Client client) {
+    public OrderInfo(BigDecimal targetValue, BigDecimal sourceToTargetRate, Client client) {
         this.targetValue = targetValue;
-        this.rate = rate;
+        this.sourceToTargetRate = sourceToTargetRate;
         this.client = client;
     }
 
@@ -17,8 +18,16 @@ public class OrderInfo {
         return targetValue;
     }
 
-    public BigDecimal getRate() {
-        return rate;
+    public BigDecimal getSourceValue() {
+        return targetValue.multiply(sourceToTargetRate);
+    }
+
+    public BigDecimal getSourceToTargetRate() {
+        return sourceToTargetRate;
+    }
+
+    public BigDecimal getTargetToSourceRate() {
+        return BigDecimal.ONE.divide(sourceToTargetRate, 8, RoundingMode.HALF_EVEN);
     }
 
     public Client getClient() {
@@ -33,14 +42,14 @@ public class OrderInfo {
         OrderInfo orderInfo = (OrderInfo) o;
 
         if (!targetValue.equals(orderInfo.targetValue)) return false;
-        if (!rate.equals(orderInfo.rate)) return false;
+        if (!sourceToTargetRate.equals(orderInfo.sourceToTargetRate)) return false;
         return client.equals(orderInfo.client);
     }
 
     @Override
     public int hashCode() {
         int result = targetValue.hashCode();
-        result = 31 * result + rate.hashCode();
+        result = 31 * result + sourceToTargetRate.hashCode();
         result = 31 * result + client.hashCode();
         return result;
     }

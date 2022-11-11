@@ -31,18 +31,17 @@ public class OrderRepository {
         return map;
     }
 
-    public List<OrderInfo> getOrderInfoList(CurrencyPair currencyPair, Currency targetCurrency) {
-        return orders.get(currencyPair)
-                .get(targetCurrency);
+    public List<OrderInfo> getOrderInfosByCurrencyPair(CurrencyPair currencyPair, Currency targetCurrency) {
+        return orders.get(currencyPair).get(targetCurrency);
     }
-
-    public void addOrder(Order order) {
-        Collection<OrderInfo> orderInfoList = getOrderInfoList(order.getCurrencyPair(), order.getTargetCurrency());
-        orderInfoList.add(order.getOrderInfo());
-    }
-
-    public void removeOrder(CurrencyPair currencyPair, Currency targetCurrency, OrderInfo orderInfo) {
-        Collection<OrderInfo> orderInfoList = getOrderInfoList(currencyPair, targetCurrency);
-        orderInfoList.remove(orderInfo);
-    }
+//
+//    public void addOrder(Order order) {
+//        Collection<OrderInfo> orderInfoList = getOrderInfosByCurrencyPair(order.getCurrencyPair(), order.getTargetCurrency());
+//        orderInfoList.add(order.getOrderInfo());
+//    }
+//
+//    public void removeOrder(CurrencyPair currencyPair, Currency targetCurrency, OrderInfo orderInfo) {
+//        Collection<OrderInfo> orderInfoList = getOrderInfosByCurrencyPair(currencyPair, targetCurrency);
+//        orderInfoList.remove(orderInfo);
+//    }
 }

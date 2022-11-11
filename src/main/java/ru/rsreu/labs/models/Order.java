@@ -2,36 +2,31 @@ package ru.rsreu.labs.models;
 
 import javax.annotation.concurrent.Immutable;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 
 @Immutable
 public class Order {
-    private final Currency sourceCurrency;
-    private final Currency targetCurrency;
-    private final OrderInfo orderInfo;
     private final CurrencyPair currencyPair;
+    private final OrderInfo orderInfo;
 
-    public Order(Currency sourceCurrency, Currency targetCurrency, OrderInfo orderInfo) {
-        this.sourceCurrency = sourceCurrency;
-        this.targetCurrency = targetCurrency;
+    public Order(CurrencyPair currencyPair, OrderInfo orderInfo) {
+        this.currencyPair = currencyPair;
         this.orderInfo = orderInfo;
-        currencyPair = new CurrencyPair(sourceCurrency, targetCurrency);
+    }
+
+    public CurrencyPair getCurrencyPair() {
+        return currencyPair;
     }
 
     public Currency getSourceCurrency() {
-        return sourceCurrency;
+        return currencyPair.getSourceCurrency();
     }
 
     public Currency getTargetCurrency() {
-        return targetCurrency;
+        return currencyPair.getTargetCurrency();
     }
 
     public OrderInfo getOrderInfo() {
         return orderInfo;
-    }
-
-    public CurrencyPair getCurrencyPair(){
-        return currencyPair;
     }
 
     public BigDecimal getTargetValue() {
@@ -46,11 +41,16 @@ public class Order {
         return orderInfo.getSourceToTargetRate();
     }
 
-    public BigDecimal getTargetToSourceRate(){
+    public BigDecimal getTargetToSourceRate() {
         return orderInfo.getTargetToSourceRate();
     }
 
     public Client getClient() {
         return orderInfo.getClient();
+    }
+
+    @Override
+    public String toString() {
+        return "Order{" + "sourceCurrency=" + currencyPair.getSourceCurrency() + ", targetCurrency=" + currencyPair.getTargetCurrency() + ", orderInfo=" + orderInfo;
     }
 }

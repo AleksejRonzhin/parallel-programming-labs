@@ -1,22 +1,18 @@
 package ru.rsreu.labs.sync;
 
 import ru.rsreu.labs.Exchange;
-import ru.rsreu.labs.models.Client;
+import ru.rsreu.labs.exceptions.NotEnoughMoneyException;
 import ru.rsreu.labs.models.Currency;
-import ru.rsreu.labs.models.Order;
-import ru.rsreu.labs.models.OrderInfo;
+import ru.rsreu.labs.models.*;
 import ru.rsreu.labs.repositories.ClientMoneyRepository;
 import ru.rsreu.labs.repositories.OrderRepository;
 
 import javax.annotation.concurrent.ThreadSafe;
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @ThreadSafe
 public class SyncExchange implements Exchange {
-
     private final OrderRepository orderRepository = new OrderRepository();
     private final ClientMoneyRepository clientMoneyRepository = new ClientMoneyRepository();
 
@@ -29,23 +25,23 @@ public class SyncExchange implements Exchange {
 
     @Override
     public void putMoney(Client client, Currency currency, BigDecimal value) {
-        clientMoneyRepository.putClientMoney(client, currency, value);
+        clientMoneyRepository.pushClientMoney(client, currency, value);
     }
 
     @Override
-    public void takeMoney(Client client, Currency currency, BigDecimal value) {
+    public void takeMoney(Client client, Currency currency, BigDecimal value) throws NotEnoughMoneyException {
         boolean result = clientMoneyRepository.takeClientMoney(client, currency, value);
         if (!result) {
-            throw new RuntimeException();
+            throw new NotEnoughMoneyException();
         }
     }
 
     @Override
-    public void createOrder(Order order) {
+    public void createOrder(Order order) throws NotEnoughMoneyException {
         takeMoney(order.getClient(), order.getSourceCurrency(), order.getSourceValue());
         boolean isCovered = tryFindAndCoverOrder(order);
         if (!isCovered) {
-            List<OrderInfo> orders = orderRepository.getOrderInfosByCurrencyPair(order.getCurrencyPair(), order.getTargetCurrency());
+            List<OrderInfo> orders = orderRepository.getOrdersByCurrencyPair(order.getCurrencyPair());
             synchronized (orders) {
                 orders.add(order.getOrderInfo());
             }
@@ -53,9 +49,9 @@ public class SyncExchange implements Exchange {
     }
 
     private boolean tryFindAndCoverOrder(Order order) {
-        List<OrderInfo> orders = orderRepository.getOrderInfosByCurrencyPair(order.getCurrencyPair(), order.getSourceCurrency());
+        List<OrderInfo> orders = orderRepository.getOrdersByCurrencyPair(order.getCurrencyPair().inverse());
         synchronized (orders) {
-            Optional<OrderInfo> coverOrder = tryFindCoverOrder(order.getOrderInfo(), orders);
+            Optional<OrderInfo> coverOrder = getCoveredOrder(order.getOrderInfo(), orders);
             if (coverOrder.isPresent()) {
                 coverOrders(order.getSourceCurrency(), order.getTargetCurrency(), order.getOrderInfo(), coverOrder.get());
                 orders.remove(coverOrder.get());
@@ -65,16 +61,14 @@ public class SyncExchange implements Exchange {
         }
     }
 
-    private Optional<OrderInfo> tryFindCoverOrder(OrderInfo newOrder, List<OrderInfo> orders) {
+    private Optional<OrderInfo> getCoveredOrder(OrderInfo newOrder, List<OrderInfo> orders) {
         if (orders.size() == 0) return Optional.empty();
-
         OrderInfo bestOrderInfo = orders.get(0);
         for (OrderInfo orderInfo : orders) {
             if (bestOrderInfo.getSourceToTargetRate().compareTo(orderInfo.getSourceToTargetRate()) <= 0) {
                 bestOrderInfo = orderInfo;
             }
         }
-
         if (bestOrderInfo.getSourceToTargetRate().compareTo(newOrder.getTargetToSourceRate()) >= 0) {
             return Optional.of(bestOrderInfo);
         } else {
@@ -87,21 +81,48 @@ public class SyncExchange implements Exchange {
         BigDecimal sourceCurrencyOrderSum = targetCurrencyOrderSum.multiply(oldOrderInfo.getTargetToSourceRate());
 
         BigDecimal newOrderCashback = newOrderInfo.getSourceValue().subtract(sourceCurrencyOrderSum);
-        clientMoneyRepository.putClientMoney(newOrderInfo.getClient(), sourceCurrency, newOrderCashback);
-        clientMoneyRepository.putClientMoney(newOrderInfo.getClient(), targetCurrency, targetCurrencyOrderSum);
+        clientMoneyRepository.pushClientMoney(newOrderInfo.getClient(), sourceCurrency, newOrderCashback);
+        clientMoneyRepository.pushClientMoney(newOrderInfo.getClient(), targetCurrency, targetCurrencyOrderSum);
 
         BigDecimal oldOrderCashback = oldOrderInfo.getSourceValue().subtract(targetCurrencyOrderSum);
-        clientMoneyRepository.putClientMoney(oldOrderInfo.getClient(), targetCurrency, oldOrderCashback);
-        clientMoneyRepository.putClientMoney(oldOrderInfo.getClient(), sourceCurrency, sourceCurrencyOrderSum);
+        clientMoneyRepository.pushClientMoney(oldOrderInfo.getClient(), targetCurrency, oldOrderCashback);
+        clientMoneyRepository.pushClientMoney(oldOrderInfo.getClient(), sourceCurrency, sourceCurrencyOrderSum);
     }
 
     @Override
-    public void getOpenOrders() {
-
+    public List<Order> getOpenOrders() {
+        List<Order> openOrders = new ArrayList<>();
+        Map<CurrencyPair, List<OrderInfo>> ordersMap = orderRepository.getOrders();
+        ordersMap.forEach((currencyPair, orders) -> {
+            synchronized (orders) {
+                orders.forEach(order -> openOrders.add(new Order(currencyPair, order)));
+            }
+        });
+        return openOrders;
     }
 
     @Override
     public Map<Currency, BigDecimal> getClientMoney(Client client) {
         return clientMoneyRepository.getClientMoney(client);
+    }
+
+    @Override
+    public Map<Currency, BigDecimal> getExchangeAndClientsMoney() {
+        Map<Currency, BigDecimal> clientMoney = clientMoneyRepository.getAllMoney();
+        Map<Currency, BigDecimal> ordersMoney = getOpenOrdersMoney();
+
+        Map<Currency, BigDecimal> result = new HashMap<>();
+        for (Currency currency : Currency.values()) {
+            result.put(currency, clientMoney.getOrDefault(currency, BigDecimal.ZERO)
+                    .add(ordersMoney.getOrDefault(currency, BigDecimal.ZERO)));
+        }
+        return result;
+    }
+
+    private Map<Currency, BigDecimal> getOpenOrdersMoney() {
+        Map<Currency, BigDecimal> result = new HashMap<>();
+        List<Order> openOrders = getOpenOrders();
+        openOrders.forEach(order -> result.compute(order.getSourceCurrency(), (key, value) -> result.getOrDefault(key, BigDecimal.ZERO).add(order.getSourceValue())));
+        return result;
     }
 }

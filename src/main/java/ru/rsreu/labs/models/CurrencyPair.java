@@ -4,16 +4,20 @@ import javax.annotation.concurrent.Immutable;
 
 @Immutable
 public class CurrencyPair {
-    private final Currency firstCurrency;
-    private final Currency secondCurrency;
+    private final Currency sourceCurrency;
+    private final Currency targetCurrency;
 
-    public CurrencyPair(Currency firstCurrency, Currency secondCurrency) {
-        this.firstCurrency = firstCurrency;
-        this.secondCurrency = secondCurrency;
+    public CurrencyPair(Currency sourceCurrency, Currency secondCurrency) {
+        this.sourceCurrency = sourceCurrency;
+        this.targetCurrency = secondCurrency;
     }
 
-    public Currency getSecondCurrency() {
-        return secondCurrency;
+    public Currency getTargetCurrency() {
+        return targetCurrency;
+    }
+
+    public Currency getSourceCurrency() {
+        return sourceCurrency;
     }
 
     @Override
@@ -23,18 +27,18 @@ public class CurrencyPair {
 
         CurrencyPair that = (CurrencyPair) o;
 
-        if(firstCurrency == that.firstCurrency && secondCurrency == that.secondCurrency) return true;
-        if(firstCurrency == that.secondCurrency && secondCurrency == that.firstCurrency) return true;
-        return false;
+        if (sourceCurrency != that.sourceCurrency) return false;
+        return targetCurrency == that.targetCurrency;
     }
 
     @Override
     public int hashCode() {
-        int result = firstCurrency.hashCode() + secondCurrency.hashCode();
+        int result = sourceCurrency.hashCode();
+        result = 31 * result + targetCurrency.hashCode();
         return result;
     }
 
-    public Currency getFirstCurrency() {
-        return firstCurrency;
+    public CurrencyPair inverse(){
+        return new CurrencyPair(targetCurrency, sourceCurrency);
     }
 }

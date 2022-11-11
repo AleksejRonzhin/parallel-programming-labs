@@ -5,6 +5,7 @@ import ru.rsreu.labs.models.Currency;
 
 import javax.annotation.concurrent.ThreadSafe;
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,27 +17,29 @@ import java.util.function.BiFunction;
 public class ClientMoneyRepository {
     private final Lock lock = new ReentrantLock();
 
-    private final Map<Client, ConcurrentHashMap<Currency, BigDecimal>> clientMoneys = new IdentityHashMap<>();
+    private final Map<Client, ConcurrentHashMap<Currency, BigDecimal>> clientMoney = new IdentityHashMap<>();
 
     public void addClient(Client client) {
         try {
             lock.lock();
-            clientMoneys.put(client, new ConcurrentHashMap<>());
+            clientMoney.put(client, new ConcurrentHashMap<>());
         } finally {
             lock.unlock();
         }
     }
 
     public Map<Currency, BigDecimal> getClientMoney(Client client) {
-        return clientMoneys.get(client);
+        try {
+            lock.lock();
+            return clientMoney.get(client);
+        } finally {
+            lock.unlock();
+        }
     }
 
-    public void putClientMoney(Client client, Currency currency, BigDecimal value) {
+    public void pushClientMoney(Client client, Currency currency, BigDecimal value) {
         Map<Currency, BigDecimal> clientMoney = getClientMoney(client);
-        clientMoney.put(currency, clientMoney.getOrDefault(currency, BigDecimal.ZERO).add(value));
-//
-//        clientMoney.computeIfPresent(currency, (key, oldValue) -> oldValue.add(value));
-//        clientMoney.putIfAbsent(currency, value);
+        clientMoney.compute(currency, (key, oldValue) -> clientMoney.getOrDefault(key, BigDecimal.ZERO).add(value));
     }
 
     public boolean takeClientMoney(Client client, Currency currency, BigDecimal value) {
@@ -44,6 +47,17 @@ public class ClientMoneyRepository {
         MoneyTaker moneyTaker = new MoneyTaker(value);
         clientMoney.computeIfPresent(currency, moneyTaker);
         return moneyTaker.isSuccess;
+    }
+
+    public Map<Currency, BigDecimal> getAllMoney() {
+        try {
+            lock.lock();
+            Map<Currency, BigDecimal> result = new HashMap<>();
+            clientMoney.forEach((client, map) -> map.forEach((currency, money) -> result.compute(currency, (key, value) -> result.getOrDefault(key, BigDecimal.ZERO).add(money))));
+            return result;
+        } finally {
+            lock.unlock();
+        }
     }
 
     static private class MoneyTaker implements BiFunction<Currency, BigDecimal, BigDecimal> {
@@ -59,6 +73,7 @@ public class ClientMoneyRepository {
             BigDecimal newValue = oldValue.subtract(value);
             if (newValue.compareTo(BigDecimal.ZERO) < 0) {
                 isSuccess = false;
+                return oldValue;
             }
             return newValue;
         }

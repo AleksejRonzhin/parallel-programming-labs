@@ -1,11 +1,13 @@
 package ru.rsreu.labs.models;
 
+import javax.annotation.concurrent.Immutable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
+@Immutable
 public class OrderInfo {
     private final BigDecimal targetValue;
-    private final BigDecimal sourceToTargetRate; // source/target
+    private final BigDecimal sourceToTargetRate;
     private final Client client;
 
     public OrderInfo(BigDecimal targetValue, BigDecimal sourceToTargetRate, Client client) {

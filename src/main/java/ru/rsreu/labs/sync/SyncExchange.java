@@ -10,6 +10,7 @@ import ru.rsreu.labs.repositories.OrderRepository;
 import javax.annotation.concurrent.ThreadSafe;
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @ThreadSafe
 public class SyncExchange implements Exchange {
@@ -24,14 +25,14 @@ public class SyncExchange implements Exchange {
     }
 
     @Override
-    public void putMoney(Client client, Currency currency, BigDecimal value) {
+    public void pushMoney(Client client, Currency currency, BigDecimal value) {
         clientMoneyRepository.pushClientMoney(client, currency, value);
     }
 
     @Override
     public void takeMoney(Client client, Currency currency, BigDecimal value) throws NotEnoughMoneyException {
-        boolean result = clientMoneyRepository.takeClientMoney(client, currency, value);
-        if (!result) {
+        boolean isSuccess = clientMoneyRepository.takeClientMoney(client, currency, value);
+        if (!isSuccess) {
             throw new NotEnoughMoneyException();
         }
     }
@@ -102,27 +103,23 @@ public class SyncExchange implements Exchange {
     }
 
     @Override
-    public Map<Currency, BigDecimal> getClientMoney(Client client) {
+    public Money getClientMoney(Client client) {
         return clientMoneyRepository.getClientMoney(client);
     }
 
     @Override
-    public Map<Currency, BigDecimal> getExchangeAndClientsMoney() {
-        Map<Currency, BigDecimal> clientMoney = clientMoneyRepository.getAllMoney();
-        Map<Currency, BigDecimal> ordersMoney = getOpenOrdersMoney();
-
-        Map<Currency, BigDecimal> result = new HashMap<>();
-        for (Currency currency : Currency.values()) {
-            result.put(currency, clientMoney.getOrDefault(currency, BigDecimal.ZERO)
-                    .add(ordersMoney.getOrDefault(currency, BigDecimal.ZERO)));
-        }
-        return result;
+    public Money getExchangeAndClientsMoney() {
+        Money clientMoney = clientMoneyRepository.getAllMoney();
+        Money ordersMoney = getOpenOrdersMoney();
+        return clientMoney.add(ordersMoney);
     }
 
-    private Map<Currency, BigDecimal> getOpenOrdersMoney() {
-        Map<Currency, BigDecimal> result = new HashMap<>();
+    private Money getOpenOrdersMoney() {
+        ConcurrentHashMap<Currency, BigDecimal> result = new ConcurrentHashMap<>();
         List<Order> openOrders = getOpenOrders();
-        openOrders.forEach(order -> result.compute(order.getSourceCurrency(), (key, value) -> result.getOrDefault(key, BigDecimal.ZERO).add(order.getSourceValue())));
-        return result;
+        openOrders.forEach(order -> result.compute(order.getSourceCurrency(),
+                (key, value) -> result.getOrDefault(key, BigDecimal.ZERO).add(
+                        order.getSourceValue())));
+        return new Money(result);
     }
 }

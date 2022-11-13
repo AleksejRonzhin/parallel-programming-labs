@@ -16,8 +16,8 @@ public class BigDecimalUtils {
         return value.setScale(VALUE_SCALE, ROUNDING_MODE);
     }
 
-    public static boolean compare(BigDecimal value1, BigDecimal value2){
-        return setValueScale(value1).compareTo(setValueScale(value2)) == 0;
+    public static boolean equals(BigDecimal value1, BigDecimal value2){
+        return setValueScale(value1).equals(setValueScale(value2));
     }
 
     public static BigDecimal getRate(BigDecimal source, BigDecimal target){

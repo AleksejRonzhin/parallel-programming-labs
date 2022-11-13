@@ -2,38 +2,43 @@ package ru.rsreu.labs.sync;
 
 import ru.rsreu.labs.Exchange;
 import ru.rsreu.labs.exceptions.NotEnoughMoneyException;
-import ru.rsreu.labs.models.Currency;
 import ru.rsreu.labs.models.*;
-import ru.rsreu.labs.repositories.ClientMoneyRepository;
+import ru.rsreu.labs.repositories.ClientBalanceRepository;
+import ru.rsreu.labs.repositories.ConcurrentClientBalanceRepository;
 import ru.rsreu.labs.repositories.OrderRepository;
 import ru.rsreu.labs.utils.BigDecimalUtils;
 
 import javax.annotation.concurrent.ThreadSafe;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 @ThreadSafe
 public class SyncExchange implements Exchange {
     private final OrderRepository orderRepository = new OrderRepository();
-    private final ClientMoneyRepository clientMoneyRepository = new ClientMoneyRepository();
+    private final ClientBalanceRepository clientBalanceRepository = new ConcurrentClientBalanceRepository();
+
+    private final AtomicLong coverCount = new AtomicLong(0);
 
     @Override
     public Client createClient() {
         Client client = new Client();
-        clientMoneyRepository.addClient(client);
+        clientBalanceRepository.addClient(client);
         return client;
     }
 
     @Override
     public void pushMoney(Client client, Currency currency, BigDecimal value) {
-        clientMoneyRepository.pushClientMoney(client, currency, value);
+        clientBalanceRepository.pushMoney(client, currency, value);
     }
 
     @Override
     public void takeMoney(Client client, Currency currency, BigDecimal value) throws NotEnoughMoneyException {
-        boolean isSuccess = clientMoneyRepository.takeClientMoney(client, currency, value);
+        boolean isSuccess = clientBalanceRepository.tryTakeMoney(client, currency, value);
         if (!isSuccess) {
             throw new NotEnoughMoneyException();
         }
@@ -81,18 +86,16 @@ public class SyncExchange implements Exchange {
 
     private void coverOrders(Currency sourceCurrency, Currency targetCurrency, OrderInfo newOrderInfo, OrderInfo oldOrderInfo) {
         BigDecimal targetCurrencyOrderSum = oldOrderInfo.getSourceValue().min(newOrderInfo.getTargetValue());
-        System.out.println("target =" + targetCurrencyOrderSum);
-        System.out.println("vr = "+oldOrderInfo.getTargetToSourceRate() );
-        BigDecimal sourceCurrencyOrderSum = BigDecimalUtils.getValueByRate(targetCurrencyOrderSum, oldOrderInfo.getTargetToSourceRate());  System.out.println("source =" + sourceCurrencyOrderSum);
-        System.out.println("source" + sourceCurrencyOrderSum);
+        BigDecimal sourceCurrencyOrderSum = BigDecimalUtils.getValueByRate(targetCurrencyOrderSum, oldOrderInfo.getTargetToSourceRate());
 
         BigDecimal newOrderCashback = newOrderInfo.getSourceValue().subtract(sourceCurrencyOrderSum);
-        clientMoneyRepository.pushClientMoney(newOrderInfo.getClient(), sourceCurrency, newOrderCashback);
-        clientMoneyRepository.pushClientMoney(newOrderInfo.getClient(), targetCurrency, targetCurrencyOrderSum);
+        clientBalanceRepository.pushMoney(newOrderInfo.getClient(), sourceCurrency, newOrderCashback);
+        clientBalanceRepository.pushMoney(newOrderInfo.getClient(), targetCurrency, targetCurrencyOrderSum);
 
         BigDecimal oldOrderCashback = oldOrderInfo.getSourceValue().subtract(targetCurrencyOrderSum);
-        clientMoneyRepository.pushClientMoney(oldOrderInfo.getClient(), targetCurrency, oldOrderCashback);
-        clientMoneyRepository.pushClientMoney(oldOrderInfo.getClient(), sourceCurrency, sourceCurrencyOrderSum);
+        clientBalanceRepository.pushMoney(oldOrderInfo.getClient(), targetCurrency, oldOrderCashback);
+        clientBalanceRepository.pushMoney(oldOrderInfo.getClient(), sourceCurrency, sourceCurrencyOrderSum);
+        coverCount.incrementAndGet();
     }
 
     @Override
@@ -108,23 +111,30 @@ public class SyncExchange implements Exchange {
     }
 
     @Override
-    public Money getClientMoney(Client client) {
-        return clientMoneyRepository.getClientMoney(client);
+    public Balance getClientBalance(Client client) {
+        return clientBalanceRepository.getClientBalance(client);
     }
 
     @Override
-    public Money getExchangeAndClientsMoney() {
-        Money clientMoney = clientMoneyRepository.getAllMoney();
-        Money ordersMoney = getOpenOrdersMoney();
-        return clientMoney.add(ordersMoney);
+    public Balance getGeneralBalance() {
+        Balance clientBalance = clientBalanceRepository.getGeneralClientsBalance();
+        System.out.println("client :" + clientBalance);
+        Balance openOrdersCost = getOpenOrdersCost();
+        System.out.println("orders :" + openOrdersCost);
+        return clientBalance.add(openOrdersCost);
     }
 
-    private Money getOpenOrdersMoney() {
+    @Override
+    public long getCoverCount() {
+        return coverCount.get();
+    }
+
+    private Balance getOpenOrdersCost() {
         ConcurrentHashMap<Currency, BigDecimal> result = new ConcurrentHashMap<>();
         List<Order> openOrders = getOpenOrders();
         openOrders.forEach(order -> result.compute(order.getSourceCurrency(),
                 (key, value) -> result.getOrDefault(key, BigDecimal.ZERO).add(
                         order.getSourceValue())));
-        return new Money(result);
+        return new Balance(result);
     }
 }

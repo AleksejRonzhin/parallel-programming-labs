@@ -2,7 +2,7 @@ package ru.rsreu.labs.repositories;
 
 import ru.rsreu.labs.models.Client;
 import ru.rsreu.labs.models.Currency;
-import ru.rsreu.labs.models.Money;
+import ru.rsreu.labs.models.Balance;
 
 import javax.annotation.concurrent.ThreadSafe;
 import java.math.BigDecimal;
@@ -13,13 +13,16 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiFunction;
 
+import static ru.rsreu.labs.utils.BigDecimalUtils.setValueScale;
+
 @ThreadSafe
-public class ClientMoneyRepository {
+public class ConcurrentClientBalanceRepository implements ClientBalanceRepository {
     private final Lock lock = new ReentrantLock();
 
     private final Map<Client, ConcurrentHashMap<Currency, BigDecimal>>
             clientMoneyStorage = new IdentityHashMap<>();
 
+    @Override
     public void addClient(Client client) {
         try {
             lock.lock();
@@ -29,40 +32,44 @@ public class ClientMoneyRepository {
         }
     }
 
-    public Money getClientMoney(Client client) {
+    @Override
+    public Balance getClientBalance(Client client) {
         try {
             lock.lock();
-            return new Money(clientMoneyStorage.get(client));
+            return new Balance(clientMoneyStorage.get(client));
         } finally {
             lock.unlock();
         }
     }
 
-    private ConcurrentHashMap<Currency, BigDecimal> getClientMoneyMap(Client client){
+    private ConcurrentHashMap<Currency, BigDecimal> getClientBalanceMap(Client client){
         return clientMoneyStorage.get(client);
     }
 
-    public void pushClientMoney(Client client, Currency currency, BigDecimal value) {
-        ConcurrentHashMap<Currency, BigDecimal> clientMoneyMap = getClientMoneyMap(client);
+    @Override
+    public void pushMoney(Client client, Currency currency, BigDecimal value) {
+        ConcurrentHashMap<Currency, BigDecimal> clientMoneyMap = getClientBalanceMap(client);
         clientMoneyMap.compute(currency, (key, oldValue) -> clientMoneyMap
-                .getOrDefault(key, BigDecimal.ZERO).add(value));
+                .getOrDefault(key, BigDecimal.ZERO).add(setValueScale(value)));
     }
 
-    public boolean takeClientMoney(Client client, Currency currency, BigDecimal value) {
-        ConcurrentHashMap<Currency, BigDecimal> clientMoneyMap = getClientMoneyMap(client);
+    @Override
+    public boolean tryTakeMoney(Client client, Currency currency, BigDecimal value) {
+        ConcurrentHashMap<Currency, BigDecimal> clientMoneyMap = getClientBalanceMap(client);
         MoneyTaker moneyTaker = new MoneyTaker(value);
         clientMoneyMap.compute(currency, moneyTaker);
         return moneyTaker.isSuccess;
     }
 
-    public Money getAllMoney() {
+    @Override
+    public Balance getGeneralClientsBalance() {
         try {
             lock.lock();
             ConcurrentHashMap<Currency, BigDecimal> result = new ConcurrentHashMap<>();
             clientMoneyStorage.forEach((client, map) -> map.forEach((currency, money) ->
                     result.compute(currency, (key, value) ->
                             result.getOrDefault(key, BigDecimal.ZERO).add(money))));
-            return new Money(result);
+            return new Balance(result);
         } finally {
             lock.unlock();
         }

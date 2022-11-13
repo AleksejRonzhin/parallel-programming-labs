@@ -1,5 +1,5 @@
 package ru.rsreu.labs.models;
 
 public enum Currency {
-    RUB, USD
+    RUB, USD, KZT
 }

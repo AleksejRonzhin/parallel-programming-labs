@@ -7,10 +7,25 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Immutable
-public class Money{
+public class Balance {
     private final Map<Currency, BigDecimal> map;
 
-    public Money(Map<Currency, BigDecimal> map) {
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Balance balance = (Balance) o;
+
+        return map.equals(balance.map);
+    }
+
+    @Override
+    public int hashCode() {
+        return map.hashCode();
+    }
+
+    public Balance(Map<Currency, BigDecimal> map) {
         this.map = new HashMap<>(map);
     }
 
@@ -20,13 +35,13 @@ public class Money{
         return result;
     }
 
-    public Money add(Money ordersMoney) {
+    public Balance add(Balance ordersBalance) {
         ConcurrentHashMap<Currency, BigDecimal> result = new ConcurrentHashMap<>();
         for (Currency currency : Currency.values()) {
             result.put(currency, this.map.getOrDefault(currency, BigDecimal.ZERO)
-                    .add(ordersMoney.map.getOrDefault(currency, BigDecimal.ZERO)));
+                    .add(ordersBalance.map.getOrDefault(currency, BigDecimal.ZERO)));
         }
-        return new Money(result);
+        return new Balance(result);
     }
 
     @Override

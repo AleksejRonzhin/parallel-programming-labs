@@ -3,17 +3,19 @@ package ru.rsreu.labs;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import ru.rsreu.labs.exceptions.NotEnoughMoneyException;
+import ru.rsreu.labs.models.Balance;
 import ru.rsreu.labs.models.Client;
 import ru.rsreu.labs.models.Currency;
-import ru.rsreu.labs.models.Money;
 import ru.rsreu.labs.models.Order;
 import ru.rsreu.labs.utils.BigDecimalUtils;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+
+import static ru.rsreu.labs.models.Currency.*;
 
 public class ExchangeTest {
     private final ExchangeCreator exchangeCreator;
@@ -27,18 +29,18 @@ public class ExchangeTest {
         Exchange exchange = exchangeCreator.create();
 
         Client client = exchange.createClient();
-        Currency pushedCurrency = Currency.USD;
+        Currency pushedCurrency = USD;
         BigDecimal pushedValue = BigDecimal.valueOf(10);
 
-        Money oldClientMoney = exchange.getClientMoney(client);
-        BigDecimal beforeValue = oldClientMoney.get(pushedCurrency);
+        Balance oldClientBalance = exchange.getClientBalance(client);
+        BigDecimal beforeValue = oldClientBalance.get(pushedCurrency);
         BigDecimal expectedValue = beforeValue.add(pushedValue);
 
         exchange.pushMoney(client, pushedCurrency, pushedValue);
-        Money newClientMoney = exchange.getClientMoney(client);
-        BigDecimal actualValue = newClientMoney.get(pushedCurrency);
+        Balance newClientBalance = exchange.getClientBalance(client);
+        BigDecimal actualValue = newClientBalance.get(pushedCurrency);
 
-        Assertions.assertEquals(expectedValue, actualValue);
+        Assertions.assertTrue(BigDecimalUtils.equals(expectedValue, actualValue));
     }
 
     @Test
@@ -46,17 +48,17 @@ public class ExchangeTest {
         Exchange exchange = exchangeCreator.create();
 
         Client client = exchange.createClient();
-        Currency takenCurrency = Currency.RUB;
+        Currency takenCurrency = RUB;
         BigDecimal takenValue = BigDecimal.valueOf(100);
-        exchange.pushMoney(client, Currency.RUB, 1000);
+        exchange.pushMoney(client, RUB, 1000);
 
-        Money oldClientMoney = exchange.getClientMoney(client);
-        BigDecimal beforeValue = oldClientMoney.get(takenCurrency);
+        Balance oldClientBalance = exchange.getClientBalance(client);
+        BigDecimal beforeValue = oldClientBalance.get(takenCurrency);
         BigDecimal expectedValue = beforeValue.subtract(takenValue);
 
         exchange.takeMoney(client, takenCurrency, takenValue);
-        Money newClientMoney = exchange.getClientMoney(client);
-        BigDecimal actualValue = newClientMoney.get(takenCurrency);
+        Balance newClientBalance = exchange.getClientBalance(client);
+        BigDecimal actualValue = newClientBalance.get(takenCurrency);
 
         Assertions.assertEquals(expectedValue, actualValue);
     }
@@ -66,10 +68,10 @@ public class ExchangeTest {
         Exchange exchange = exchangeCreator.create();
 
         Client client = exchange.createClient();
-        Currency takenCurrency = Currency.RUB;
+        Currency takenCurrency = RUB;
 
-        Money beforeClientMoney = exchange.getClientMoney(client);
-        BigDecimal beforeValue = beforeClientMoney.get(takenCurrency);
+        Balance beforeClientBalance = exchange.getClientBalance(client);
+        BigDecimal beforeValue = beforeClientBalance.get(takenCurrency);
         BigDecimal takenValue = beforeValue.add(BigDecimal.ONE);
 
         Assertions.assertThrows(NotEnoughMoneyException.class, () ->
@@ -81,8 +83,8 @@ public class ExchangeTest {
         Exchange exchange = exchangeCreator.create();
         Client client = exchange.createClient();
 
-        exchange.pushMoney(client, Currency.USD, 10);
-        Order order = new Order(Currency.USD, Currency.RUB, new BigDecimal(130), BigDecimal.valueOf(1.0 / 65), client);
+        exchange.pushMoney(client, USD, 10);
+        Order order = Order.builder(client).buy(130, RUB).selling(2, USD);
         exchange.createOrder(order);
 
         List<Order> orders = exchange.getOpenOrders();
@@ -94,54 +96,87 @@ public class ExchangeTest {
         Exchange exchange = exchangeCreator.create();
         Client firstClient = exchange.createClient();
         Client secondClient = exchange.createClient();
-        exchange.pushMoney(firstClient, Currency.RUB, 1000);
-        exchange.pushMoney(secondClient, Currency.USD, 100);
+        exchange.pushMoney(firstClient, RUB, 1000);
+        exchange.pushMoney(secondClient, USD, 100);
 
-        Order secondOrder = new Order(Currency.USD, Currency.RUB, BigDecimal.valueOf(130), BigDecimalUtils.getRate(BigDecimal.valueOf(1), BigDecimal.valueOf(65)), secondClient);
-        Order firstOrder = new Order(Currency.RUB, Currency.USD, BigDecimal.valueOf(1), BigDecimal.valueOf(70), firstClient);
+        BigDecimal rubToUsdRate = BigDecimalUtils.getRate(BigDecimal.valueOf(1), BigDecimal.valueOf(65));
+        Order secondOrder = Order.builder(secondClient).buy(130, RUB).at(rubToUsdRate, USD);
+        Order firstOrder = Order.builder(firstClient).buy(1, USD).selling(65, RUB);
         exchange.createOrder(firstOrder);
         exchange.createOrder(secondOrder);
 
-        BigDecimal newFirstClientTargetValue = exchange.getClientMoney(firstClient)
-                .get(Currency.USD);
-        BigDecimal newSecondClientTargetValue = exchange.getClientMoney(secondClient)
-                .get(Currency.RUB);
+        BigDecimal newFirstClientTargetValue = exchange.getClientBalance(firstClient).get(USD);
+        BigDecimal newSecondClientTargetValue = exchange.getClientBalance(secondClient).get(RUB);
 
-        Assertions.assertTrue(BigDecimalUtils.compare(BigDecimal.valueOf(1), newFirstClientTargetValue));
-        Assertions.assertTrue(BigDecimalUtils.compare(BigDecimal.valueOf(70), newSecondClientTargetValue));
+        Assertions.assertTrue(BigDecimalUtils.equals(BigDecimal.valueOf(1), newFirstClientTargetValue));
+        Assertions.assertTrue(BigDecimalUtils.equals(BigDecimal.valueOf(65), newSecondClientTargetValue));
     }
 
     @Test
-    public void stressTest() throws InterruptedException {
+    public void stressTest() throws InterruptedException, ExecutionException {
         Exchange exchange = exchangeCreator.create();
-        int clientCount = 10;
+        int clientCount = 50;
+        int clientOrderCount = 10000;
+
         ExecutorService executorService = Executors.newFixedThreadPool(clientCount);
-        Runnable target = getTarget(exchange);
-        for(int i = 0; i < 10; i++){
-            executorService.submit(target);
-        }
-        executorService.shutdownNow();
-        executorService.awaitTermination(300, TimeUnit.SECONDS);
+        Collection<Client> clients = initExchange(exchange, clientCount, executorService);
 
-        System.out.println(exchange.getOpenOrders().size());
+        Balance startGeneralBalance = exchange.getGeneralBalance();
+        awaitAddingOrdersTasks(exchange, executorService, clients, clientOrderCount);
+        Balance endGeneralBalance = exchange.getGeneralBalance();
+        Assertions.assertEquals(startGeneralBalance, endGeneralBalance);
 
-        System.out.println(exchange.getExchangeAndClientsMoney());
+        long expectedOrderCount = clientCount * clientOrderCount;
+        long openOrderCount = exchange.getOpenOrders().size();
+        long coverCount = exchange.getCoverCount();
+        long actualOrderCount = openOrderCount + coverCount * 2;
+        Assertions.assertEquals(expectedOrderCount, actualOrderCount);
     }
 
-    private Runnable getTarget(Exchange exchange){
-        return () -> {
+    public Collection<Client> initExchange(Exchange exchange, int clientCount, ExecutorService service) throws InterruptedException, ExecutionException {
+        Collection<Callable<Client>> tasks = new ArrayList<>(clientCount);
+        Callable<Client> clientInit = () -> {
             Client client = exchange.createClient();
-            exchange.pushMoney(client, Currency.USD, 100000);
-            exchange.pushMoney(client, Currency.RUB, 100000);
-            Order order = new Order(Currency.RUB, Currency.USD, BigDecimal.valueOf(1), BigDecimal.valueOf(70), client);
-            try {
-                for(int i = 0; i < 1000; i++){
-                    exchange.createOrder(order);
+            exchange.pushMoney(client, USD, 100000);
+            exchange.pushMoney(client, RUB, 100000);
+            exchange.pushMoney(client, KZT, 100000);
+            return client;
+        };
+        for(int i = 0; i < clientCount; i++){
+            tasks.add(clientInit);
+        }
 
+        List<Future<Client>> futures = service.invokeAll(tasks);
+        return waitFutures(futures);
+    }
+
+    public void awaitAddingOrdersTasks(Exchange exchange, ExecutorService executorService, Collection<Client> clients, int clientOrderCount) throws ExecutionException, InterruptedException {
+        Collection<Future<Void>> futures = new ArrayList<>();
+        clients.forEach(client -> futures.add(executorService.submit(getTarget(exchange, client, clientOrderCount))));
+        waitFutures(futures);
+    }
+
+    private <T> Collection<T> waitFutures(Collection<Future<T>> futures) throws ExecutionException, InterruptedException {
+        Collection<T> result = new ArrayList<>();
+        for(Future<T> future: futures){
+            result.add(future.get());
+        }
+        return result;
+    }
+
+    private Callable<Void> getTarget(Exchange exchange, Client client, int orderCount) {
+        return () -> {
+            try {
+                for (int i = 0; i < orderCount; i++) {
+                    exchange.pushMoney(client, USD, 1);
+                    Order order = OrderGenerator.generate(client);
+                    exchange.createOrder(order);
+                    exchange.takeMoney(client, USD, 1);
                 }
-            } catch (NotEnoughMoneyException e) {
-                throw new RuntimeException(e);
+            } catch (NotEnoughMoneyException ignored) {
+
             }
+            return null;
         };
     }
 }

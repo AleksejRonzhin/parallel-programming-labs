@@ -14,9 +14,12 @@ public class Order {
         this.orderInfo = orderInfo;
     }
 
-    public Order(Currency sourceCurrency, Currency targetCurrency, BigDecimal targetValue, BigDecimal sourceToTargetRate, Client client){
-        this.currencyPair = new CurrencyPair(sourceCurrency, targetCurrency);
-        this.orderInfo = OrderInfo.createByRate(targetValue, sourceToTargetRate, client);
+    public Order(Currency sourceCurrency, Currency targetCurrency, BigDecimal targetValue, BigDecimal sourceToTargetRate, Client client) {
+        this(new CurrencyPair(sourceCurrency, targetCurrency), OrderInfo.createByRate(targetValue, sourceToTargetRate, client));
+    }
+
+    public static Builder builder(Client client) {
+        return new Builder(client);
     }
 
     public CurrencyPair getCurrencyPair() {
@@ -76,5 +79,55 @@ public class Order {
     @Override
     public String toString() {
         return "Order{" + "sourceCurrency=" + currencyPair.getSourceCurrency() + ", targetCurrency=" + currencyPair.getTargetCurrency() + ", orderInfo=" + orderInfo;
+    }
+
+    public static class Builder {
+        private final Client client;
+        private Currency targetCurrency;
+        private BigDecimal targetValue;
+
+        public Builder(Client client) {
+            this.client = client;
+        }
+
+        public Builder buy(BigDecimal targetValue, Currency targetCurrency) {
+            this.targetValue = targetValue;
+            this.targetCurrency = targetCurrency;
+            return this;
+        }
+
+        public Builder buy(int targetValue, Currency targetCurrency) {
+            return buy(new BigDecimal(targetValue), targetCurrency);
+        }
+
+        public Builder buy(String targetValue, Currency targetCurrency) {
+            return buy(new BigDecimal(targetValue), targetCurrency);
+        }
+
+        public Order at(BigDecimal rate, Currency sourceCurrency) {
+            return new Order(sourceCurrency, targetCurrency, targetValue, rate, client);
+        }
+
+        public Order at(int rate, Currency sourceCurrency) {
+            return at(new BigDecimal(rate), sourceCurrency);
+        }
+
+        public Order at(String rate, Currency sourceCurrency) {
+            return at(new BigDecimal(rate), sourceCurrency);
+        }
+
+
+        public Order selling(BigDecimal sourceValue, Currency sourceCurrency) {
+            OrderInfo orderInfo = OrderInfo.createByCurrencyValues(sourceValue, targetValue, client);
+            return new Order(new CurrencyPair(sourceCurrency, targetCurrency), orderInfo);
+        }
+
+        public Order selling(int sourceValue, Currency sourceCurrency) {
+            return selling(new BigDecimal(sourceValue), sourceCurrency);
+        }
+
+        public Order selling(String sourceValue, Currency sourceCurrency) {
+            return selling(new BigDecimal(sourceValue), sourceCurrency);
+        }
     }
 }

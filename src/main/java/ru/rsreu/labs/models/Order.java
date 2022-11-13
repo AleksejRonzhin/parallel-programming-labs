@@ -16,13 +16,8 @@ public class Order {
 
     public Order(Currency sourceCurrency, Currency targetCurrency, BigDecimal targetValue, BigDecimal sourceToTargetRate, Client client){
         this.currencyPair = new CurrencyPair(sourceCurrency, targetCurrency);
-        this.orderInfo = new OrderInfo(targetValue, sourceToTargetRate, client);
+        this.orderInfo = OrderInfo.createByRate(targetValue, sourceToTargetRate, client);
     }
-
-    public Order(Currency sourceCurrency, Currency targetCurrency, double targetValue, double sourceToTargetRate, Client client){
-        this(sourceCurrency, targetCurrency, BigDecimal.valueOf(targetValue), BigDecimal.valueOf(sourceToTargetRate), client);
-    }
-
 
     public CurrencyPair getCurrencyPair() {
         return currencyPair;

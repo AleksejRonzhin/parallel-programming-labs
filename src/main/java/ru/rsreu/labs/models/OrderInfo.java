@@ -1,18 +1,36 @@
 package ru.rsreu.labs.models;
 
+import ru.rsreu.labs.utils.BigDecimalUtils;
+
 import javax.annotation.concurrent.Immutable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
+import static ru.rsreu.labs.utils.BigDecimalUtils.*;
+
 @Immutable
 public class OrderInfo {
+    private final BigDecimal sourceValue;
     private final BigDecimal targetValue;
     private final BigDecimal sourceToTargetRate;
+    private final BigDecimal targetToSourceRate;
     private final Client client;
 
-    public OrderInfo(BigDecimal targetValue, BigDecimal sourceToTargetRate, Client client) {
-        this.targetValue = targetValue;
-        this.sourceToTargetRate = sourceToTargetRate;
+    public static OrderInfo createByRate(BigDecimal targetValue, BigDecimal sourceToTargetRate, Client client){
+        return new OrderInfo(getValueByRate(targetValue, sourceToTargetRate), targetValue,
+                sourceToTargetRate, getInverseRate(sourceToTargetRate), client);
+    }
+
+    public static OrderInfo createByCurrencyValues(BigDecimal sourceValue, BigDecimal targetValue, Client client){
+        return new OrderInfo(sourceValue, targetValue, getRate(sourceValue, targetValue),
+                getRate(targetValue, sourceValue), client);
+    }
+
+    private OrderInfo(BigDecimal sourceValue, BigDecimal targetValue, BigDecimal sourceToTargetRate, BigDecimal targetToSourceRate, Client client) {
+        this.targetValue = setValueScale(targetValue);
+        this.sourceValue = setValueScale(sourceValue);
+        this.sourceToTargetRate = setRateScale(sourceToTargetRate);
+        this.targetToSourceRate = setRateScale(targetToSourceRate);
         this.client = client;
     }
 
@@ -21,7 +39,7 @@ public class OrderInfo {
     }
 
     public BigDecimal getSourceValue() {
-        return targetValue.multiply(sourceToTargetRate);
+        return sourceValue;
     }
 
     public BigDecimal getSourceToTargetRate() {
@@ -29,7 +47,7 @@ public class OrderInfo {
     }
 
     public BigDecimal getTargetToSourceRate() {
-        return BigDecimal.ONE.divide(sourceToTargetRate, 8, RoundingMode.HALF_EVEN);
+        return targetToSourceRate;
     }
 
     public Client getClient() {

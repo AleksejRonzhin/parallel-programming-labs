@@ -6,9 +6,11 @@ import ru.rsreu.labs.models.Currency;
 import ru.rsreu.labs.models.*;
 import ru.rsreu.labs.repositories.ClientMoneyRepository;
 import ru.rsreu.labs.repositories.OrderRepository;
+import ru.rsreu.labs.utils.BigDecimalUtils;
 
 import javax.annotation.concurrent.ThreadSafe;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -79,7 +81,10 @@ public class SyncExchange implements Exchange {
 
     private void coverOrders(Currency sourceCurrency, Currency targetCurrency, OrderInfo newOrderInfo, OrderInfo oldOrderInfo) {
         BigDecimal targetCurrencyOrderSum = oldOrderInfo.getSourceValue().min(newOrderInfo.getTargetValue());
-        BigDecimal sourceCurrencyOrderSum = targetCurrencyOrderSum.multiply(oldOrderInfo.getTargetToSourceRate());
+        System.out.println("target =" + targetCurrencyOrderSum);
+        System.out.println("vr = "+oldOrderInfo.getTargetToSourceRate() );
+        BigDecimal sourceCurrencyOrderSum = BigDecimalUtils.getValueByRate(targetCurrencyOrderSum, oldOrderInfo.getTargetToSourceRate());  System.out.println("source =" + sourceCurrencyOrderSum);
+        System.out.println("source" + sourceCurrencyOrderSum);
 
         BigDecimal newOrderCashback = newOrderInfo.getSourceValue().subtract(sourceCurrencyOrderSum);
         clientMoneyRepository.pushClientMoney(newOrderInfo.getClient(), sourceCurrency, newOrderCashback);

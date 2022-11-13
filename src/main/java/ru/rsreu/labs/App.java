@@ -24,8 +24,8 @@ public class App {
         System.out.println("client 1 " + clientMoney);
         System.out.println("client 2 " + client1Money);
 
-        Order order = new Order(new CurrencyPair(Currency.USD, Currency.RUB), new OrderInfo(BigDecimal.valueOf(130),
-                BigDecimal.valueOf(1.0 / 65), client1));
+        Order order = new Order(Currency.USD, Currency.RUB, BigDecimal.valueOf(130),
+                BigDecimal.valueOf(1.0 / 65), client1);
 
         try {
             exchange.createOrder(order);
@@ -37,7 +37,7 @@ public class App {
         System.out.println("client 1 " + clientMoney);
         System.out.println("client 2 " + client1Money);
 
-        Order order2 = new Order(new CurrencyPair(Currency.RUB, Currency.USD), new OrderInfo(BigDecimal.valueOf(1), BigDecimal.valueOf(70), client));
+        Order order2 = new Order(Currency.RUB, Currency.USD, BigDecimal.valueOf(2), BigDecimal.valueOf(66), client);
 
         try {
             exchange.createOrder(order2);

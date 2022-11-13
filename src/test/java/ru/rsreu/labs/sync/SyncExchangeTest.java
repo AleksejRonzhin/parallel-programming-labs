@@ -4,6 +4,6 @@ import ru.rsreu.labs.ExchangeTest;
 
 class SyncExchangeTest extends ExchangeTest {
     public SyncExchangeTest() {
-        super(new SyncExchange());
+        super(new SyncExchangeCreator());
     }
 }

@@ -17,12 +17,21 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static ru.rsreu.labs.utils.BigDecimalUtils.getCommission;
+
 @ThreadSafe
 public class SyncExchange implements Exchange {
+    private final static BigDecimal COMMISSION_PERCENT = new BigDecimal("0.01");
     private final OrderRepository orderRepository = new OrderRepository();
     private final ClientBalanceRepository clientBalanceRepository = new ConcurrentClientBalanceRepository();
+    private final ConcurrentHashMap<Currency, BigDecimal> bank = new ConcurrentHashMap<>();
+    private final boolean withCommission;
 
     private final AtomicLong coverCount = new AtomicLong(0);
+
+    public SyncExchange(boolean withCommission) {
+        this.withCommission = withCommission;
+    }
 
     @Override
     public Client createClient() {
@@ -90,12 +99,23 @@ public class SyncExchange implements Exchange {
 
         BigDecimal newOrderCashback = newOrderInfo.getSourceValue().subtract(sourceCurrencyOrderSum);
         clientBalanceRepository.pushMoney(newOrderInfo.getClient(), sourceCurrency, newOrderCashback);
-        clientBalanceRepository.pushMoney(newOrderInfo.getClient(), targetCurrency, targetCurrencyOrderSum);
-
         BigDecimal oldOrderCashback = oldOrderInfo.getSourceValue().subtract(targetCurrencyOrderSum);
         clientBalanceRepository.pushMoney(oldOrderInfo.getClient(), targetCurrency, oldOrderCashback);
+
+        if (withCommission) {
+            targetCurrencyOrderSum = chargeCommission(targetCurrencyOrderSum, targetCurrency);
+            sourceCurrencyOrderSum = chargeCommission(sourceCurrencyOrderSum, sourceCurrency);
+        }
         clientBalanceRepository.pushMoney(oldOrderInfo.getClient(), sourceCurrency, sourceCurrencyOrderSum);
+        clientBalanceRepository.pushMoney(newOrderInfo.getClient(), targetCurrency, targetCurrencyOrderSum);
+
         coverCount.incrementAndGet();
+    }
+
+    private BigDecimal chargeCommission(BigDecimal value, Currency currency) {
+        BigDecimal commission = getCommission(value, COMMISSION_PERCENT);
+        bank.compute(currency, (key, ignored) -> bank.getOrDefault(key, BigDecimal.ZERO).add(commission));
+        return value.subtract(commission);
     }
 
     @Override
@@ -121,7 +141,9 @@ public class SyncExchange implements Exchange {
         System.out.println("client :" + clientBalance);
         Balance openOrdersCost = getOpenOrdersCost();
         System.out.println("orders :" + openOrdersCost);
-        return clientBalance.add(openOrdersCost);
+        Balance commission = new Balance(bank);
+        System.out.println("commission :" + commission);
+        return clientBalance.add(openOrdersCost.add(commission));
     }
 
     @Override

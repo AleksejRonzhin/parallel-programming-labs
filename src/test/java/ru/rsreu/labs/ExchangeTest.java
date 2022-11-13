@@ -1,6 +1,7 @@
 package ru.rsreu.labs;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import ru.rsreu.labs.exceptions.NotEnoughMoneyException;
 import ru.rsreu.labs.models.Balance;
@@ -26,7 +27,7 @@ public class ExchangeTest {
 
     @Test
     public void pushMoneyTest() {
-        Exchange exchange = exchangeCreator.create();
+        Exchange exchange = exchangeCreator.create(false);
 
         Client client = exchange.createClient();
         Currency pushedCurrency = USD;
@@ -45,7 +46,7 @@ public class ExchangeTest {
 
     @Test
     public void takeMoneyTest() throws NotEnoughMoneyException {
-        Exchange exchange = exchangeCreator.create();
+        Exchange exchange = exchangeCreator.create(false);
 
         Client client = exchange.createClient();
         Currency takenCurrency = RUB;
@@ -65,7 +66,7 @@ public class ExchangeTest {
 
     @Test
     public void takeTooManyMoneyTest() {
-        Exchange exchange = exchangeCreator.create();
+        Exchange exchange = exchangeCreator.create(false);
 
         Client client = exchange.createClient();
         Currency takenCurrency = RUB;
@@ -80,7 +81,7 @@ public class ExchangeTest {
 
     @Test
     public void addOrderTest() throws NotEnoughMoneyException {
-        Exchange exchange = exchangeCreator.create();
+        Exchange exchange = exchangeCreator.create(false);
         Client client = exchange.createClient();
 
         exchange.pushMoney(client, USD, 10);
@@ -93,7 +94,7 @@ public class ExchangeTest {
 
     @Test
     public void coveringOrdersTest() throws NotEnoughMoneyException {
-        Exchange exchange = exchangeCreator.create();
+        Exchange exchange = exchangeCreator.create(false);
         Client firstClient = exchange.createClient();
         Client secondClient = exchange.createClient();
         exchange.pushMoney(firstClient, RUB, 1000);
@@ -112,11 +113,11 @@ public class ExchangeTest {
         Assertions.assertTrue(BigDecimalUtils.equals(BigDecimal.valueOf(65), newSecondClientTargetValue));
     }
 
-    @Test
+    @RepeatedTest(100)
     public void stressTest() throws InterruptedException, ExecutionException {
-        Exchange exchange = exchangeCreator.create();
+        Exchange exchange = exchangeCreator.create(true);
         int clientCount = 50;
-        int clientOrderCount = 10000;
+        int clientOrderCount = 3000;
 
         ExecutorService executorService = Executors.newFixedThreadPool(clientCount);
         Collection<Client> clients = initExchange(exchange, clientCount, executorService);

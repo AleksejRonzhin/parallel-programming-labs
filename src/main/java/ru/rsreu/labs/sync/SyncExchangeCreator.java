@@ -5,7 +5,7 @@ import ru.rsreu.labs.ExchangeCreator;
 
 public class SyncExchangeCreator implements ExchangeCreator {
     @Override
-    public Exchange create() {
-        return new SyncExchange();
+    public Exchange create(boolean withCommission) {
+        return new SyncExchange(withCommission);
     }
 }

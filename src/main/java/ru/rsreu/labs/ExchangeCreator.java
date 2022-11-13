@@ -1,5 +1,5 @@
 package ru.rsreu.labs;
 
 public interface ExchangeCreator {
-    Exchange create();
+    Exchange create(boolean withCommission);
 }

@@ -31,4 +31,8 @@ public class BigDecimalUtils {
     public static BigDecimal getInverseRate(BigDecimal rate){
         return BigDecimal.ONE.divide(rate, RATE_SCALE, ROUNDING_MODE);
     }
+
+    public static BigDecimal getCommission(BigDecimal value, BigDecimal commissionPercent){
+        return setValueScale(value.multiply(commissionPercent));
+    }
 }

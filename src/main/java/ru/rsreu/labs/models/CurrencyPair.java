@@ -1,44 +1,54 @@
 package ru.rsreu.labs.models;
 
 import javax.annotation.concurrent.Immutable;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 
 @Immutable
 public class CurrencyPair {
-    private final Currency sourceCurrency;
-    private final Currency targetCurrency;
+    private final static Collection<CurrencyPair> pairs;
 
-    public CurrencyPair(Currency sourceCurrency, Currency secondCurrency) {
-        this.sourceCurrency = sourceCurrency;
-        this.targetCurrency = secondCurrency;
+    public static Collection<CurrencyPair> getPairs(){
+        return Collections.unmodifiableCollection(pairs);
     }
 
-    public Currency getTargetCurrency() {
-        return targetCurrency;
+    static {
+        pairs = new ArrayList<>();
+        Currency[] currencies = Currency.values();
+        for (int i = 0; i < currencies.length; i++) {
+            for (int j = i; j < currencies.length; j++) {
+                pairs.add(new CurrencyPair(currencies[i], currencies[j]));
+            }
+        }
     }
 
-    public Currency getSourceCurrency() {
-        return sourceCurrency;
+    private final Currency firstCurrency;
+    private final Currency secondCurrency;
+
+    private CurrencyPair(Currency firstCurrency, Currency secondCurrency) {
+        this.firstCurrency = firstCurrency;
+        this.secondCurrency = secondCurrency;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+    public static CurrencyPair create(Currency firstCurrency, Currency secondCurrency) {
+        for (CurrencyPair pair : pairs) {
+            if (pair.firstCurrency == firstCurrency && pair.secondCurrency == secondCurrency) {
+                return pair;
+            }
 
-        CurrencyPair that = (CurrencyPair) o;
-
-        if (sourceCurrency != that.sourceCurrency) return false;
-        return targetCurrency == that.targetCurrency;
+            if (pair.firstCurrency == secondCurrency && pair.secondCurrency == firstCurrency) {
+                return pair;
+            }
+        }
+        throw new RuntimeException();
     }
 
-    @Override
-    public int hashCode() {
-        int result = sourceCurrency.hashCode();
-        result = 31 * result + targetCurrency.hashCode();
-        return result;
+    public Currency getSecondCurrency() {
+        return secondCurrency;
     }
 
-    public CurrencyPair inverse(){
-        return new CurrencyPair(targetCurrency, sourceCurrency);
+    public Currency getFirstCurrency() {
+        return firstCurrency;
     }
 }

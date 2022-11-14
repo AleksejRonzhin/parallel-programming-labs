@@ -3,6 +3,7 @@ package ru.rsreu.labs.sync;
 import ru.rsreu.labs.Exchange;
 import ru.rsreu.labs.exceptions.NotEnoughMoneyException;
 import ru.rsreu.labs.models.*;
+import ru.rsreu.labs.models.Currency;
 import ru.rsreu.labs.repositories.ClientBalanceRepository;
 import ru.rsreu.labs.repositories.ConcurrentClientBalanceRepository;
 import ru.rsreu.labs.repositories.OrderRepository;
@@ -10,10 +11,7 @@ import ru.rsreu.labs.utils.BigDecimalUtils;
 
 import javax.annotation.concurrent.ThreadSafe;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -56,26 +54,23 @@ public class SyncExchange implements Exchange {
     @Override
     public void createOrder(Order order) throws NotEnoughMoneyException {
         takeMoney(order.getClient(), order.getSourceCurrency(), order.getSourceValue());
-        boolean isCovered = tryFindAndCoverOrder(order);
-        if (!isCovered) {
-            List<OrderInfo> orders = orderRepository.getOrdersByCurrencyPair(order.getCurrencyPair());
-            synchronized (orders) {
-                orders.add(order.getOrderInfo());
+        OrderRepository.OrderListPair orderListPair = orderRepository.getOrdersByCurrencyPair(order.getCurrencyPair());
+        synchronized (orderListPair) {
+            boolean isCovered = tryFindAndCoverOrder(order, order.isSelling() ? orderListPair.getSellOrders() : orderListPair.getBuyOrders());
+            if (!isCovered) {
+                (order.isSelling() ? orderListPair.getBuyOrders() : orderListPair.getSellOrders()).add(order.getOrderInfo());
             }
         }
     }
 
-    private boolean tryFindAndCoverOrder(Order order) {
-        List<OrderInfo> orders = orderRepository.getOrdersByCurrencyPair(order.getCurrencyPair().inverse());
-        synchronized (orders) {
-            Optional<OrderInfo> coverOrder = getCoveredOrder(order.getOrderInfo(), orders);
-            if (coverOrder.isPresent()) {
-                coverOrders(order.getSourceCurrency(), order.getTargetCurrency(), order.getOrderInfo(), coverOrder.get());
-                orders.remove(coverOrder.get());
-                return true;
-            }
-            return false;
+    private boolean tryFindAndCoverOrder(Order order, List<OrderInfo> orders) {
+        Optional<OrderInfo> coverOrder = getCoveredOrder(order.getOrderInfo(), orders);
+        if (coverOrder.isPresent()) {
+            coverOrders(order.getSourceCurrency(), order.getTargetCurrency(), order.getOrderInfo(), coverOrder.get());
+            orders.remove(coverOrder.get());
+            return true;
         }
+        return false;
     }
 
     private Optional<OrderInfo> getCoveredOrder(OrderInfo newOrder, List<OrderInfo> orders) {
@@ -121,10 +116,11 @@ public class SyncExchange implements Exchange {
     @Override
     public List<Order> getOpenOrders() {
         List<Order> openOrders = new ArrayList<>();
-        Map<CurrencyPair, List<OrderInfo>> ordersMap = orderRepository.getOrders();
-        ordersMap.forEach((currencyPair, orders) -> {
-            synchronized (orders) {
-                orders.forEach(order -> openOrders.add(new Order(currencyPair, order)));
+        Map<CurrencyPair, OrderRepository.OrderListPair> ordersMap = orderRepository.getOrders();
+        ordersMap.forEach((currencyPair, ordersPair) -> {
+            synchronized (ordersPair) {
+                ordersPair.getSellOrders().forEach(order -> openOrders.add(new Order(currencyPair, order, true)));
+                ordersPair.getBuyOrders().forEach(order -> openOrders.add(new Order(currencyPair, order, false)));
             }
         });
         return openOrders;
@@ -154,9 +150,7 @@ public class SyncExchange implements Exchange {
     private Balance getOpenOrdersCost() {
         ConcurrentHashMap<Currency, BigDecimal> result = new ConcurrentHashMap<>();
         List<Order> openOrders = getOpenOrders();
-        openOrders.forEach(order -> result.compute(order.getSourceCurrency(),
-                (key, value) -> result.getOrDefault(key, BigDecimal.ZERO).add(
-                        order.getSourceValue())));
+        openOrders.forEach(order -> result.compute(order.getSourceCurrency(), (key, value) -> result.getOrDefault(key, BigDecimal.ZERO).add(order.getSourceValue())));
         return new Balance(result);
     }
 }

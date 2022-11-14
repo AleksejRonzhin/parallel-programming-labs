@@ -9,13 +9,16 @@ public class Order {
     private final CurrencyPair currencyPair;
     private final OrderInfo orderInfo;
 
-    public Order(CurrencyPair currencyPair, OrderInfo orderInfo) {
+    private final boolean isSelling;
+
+    public Order(CurrencyPair currencyPair, OrderInfo orderInfo, boolean isSelling) {
         this.currencyPair = currencyPair;
         this.orderInfo = orderInfo;
+        this.isSelling = isSelling;
     }
 
     public Order(Currency sourceCurrency, Currency targetCurrency, BigDecimal targetValue, BigDecimal sourceToTargetRate, Client client) {
-        this(new CurrencyPair(sourceCurrency, targetCurrency), OrderInfo.createByRate(targetValue, sourceToTargetRate, client));
+        this(CurrencyPair.create(sourceCurrency, targetCurrency), OrderInfo.createByRate(targetValue, sourceToTargetRate, client), CurrencyPair.create(sourceCurrency, targetCurrency).getFirstCurrency() == sourceCurrency);
     }
 
     public static Builder builder(Client client) {
@@ -27,11 +30,11 @@ public class Order {
     }
 
     public Currency getSourceCurrency() {
-        return currencyPair.getSourceCurrency();
+        return currencyPair.getFirstCurrency();
     }
 
     public Currency getTargetCurrency() {
-        return currencyPair.getTargetCurrency();
+        return currencyPair.getSecondCurrency();
     }
 
     public OrderInfo getOrderInfo() {
@@ -78,7 +81,11 @@ public class Order {
 
     @Override
     public String toString() {
-        return "Order{" + "sourceCurrency=" + currencyPair.getSourceCurrency() + ", targetCurrency=" + currencyPair.getTargetCurrency() + ", orderInfo=" + orderInfo;
+        return "Order{" + "sourceCurrency=" + currencyPair.getFirstCurrency() + ", targetCurrency=" + currencyPair.getSecondCurrency() + ", orderInfo=" + orderInfo;
+    }
+
+    public boolean isSelling() {
+        return isSelling;
     }
 
     public static class Builder {
@@ -119,7 +126,9 @@ public class Order {
 
         public Order selling(BigDecimal sourceValue, Currency sourceCurrency) {
             OrderInfo orderInfo = OrderInfo.createByCurrencyValues(sourceValue, targetValue, client);
-            return new Order(new CurrencyPair(sourceCurrency, targetCurrency), orderInfo);
+            CurrencyPair currencyPair = CurrencyPair.create(sourceCurrency, targetCurrency);
+            boolean isSelling = currencyPair.getFirstCurrency() == sourceCurrency;
+            return new Order(currencyPair, orderInfo, isSelling);
         }
 
         public Order selling(int sourceValue, Currency sourceCurrency) {

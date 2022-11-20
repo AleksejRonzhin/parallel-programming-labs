@@ -13,6 +13,14 @@ public class CurrencyPair {
         return Collections.unmodifiableCollection(pairs);
     }
 
+    @Override
+    public String toString() {
+        return "CurrencyPair{" +
+                "firstCurrency=" + firstCurrency +
+                ", secondCurrency=" + secondCurrency +
+                '}';
+    }
+
     static {
         pairs = new ArrayList<>();
         Currency[] currencies = Currency.values();

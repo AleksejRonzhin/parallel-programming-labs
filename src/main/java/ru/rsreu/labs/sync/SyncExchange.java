@@ -1,9 +1,9 @@
 package ru.rsreu.labs.sync;
 
 import ru.rsreu.labs.Exchange;
+import ru.rsreu.labs.exceptions.ClientNotFoundException;
 import ru.rsreu.labs.exceptions.NotEnoughMoneyException;
 import ru.rsreu.labs.models.*;
-import ru.rsreu.labs.models.Currency;
 import ru.rsreu.labs.repositories.ClientBalanceRepository;
 import ru.rsreu.labs.repositories.ConcurrentClientBalanceRepository;
 import ru.rsreu.labs.repositories.OrderRepository;
@@ -11,7 +11,10 @@ import ru.rsreu.labs.utils.BigDecimalUtils;
 
 import javax.annotation.concurrent.ThreadSafe;
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -39,12 +42,12 @@ public class SyncExchange implements Exchange {
     }
 
     @Override
-    public void pushMoney(Client client, Currency currency, BigDecimal value) {
+    public void pushMoney(Client client, Currency currency, BigDecimal value) throws ClientNotFoundException {
         clientBalanceRepository.pushMoney(client, currency, value);
     }
 
     @Override
-    public void takeMoney(Client client, Currency currency, BigDecimal value) throws NotEnoughMoneyException {
+    public void takeMoney(Client client, Currency currency, BigDecimal value) throws NotEnoughMoneyException, ClientNotFoundException {
         boolean isSuccess = clientBalanceRepository.tryTakeMoney(client, currency, value);
         if (!isSuccess) {
             throw new NotEnoughMoneyException();
@@ -52,18 +55,29 @@ public class SyncExchange implements Exchange {
     }
 
     @Override
-    public void createOrder(Order order) throws NotEnoughMoneyException {
-        takeMoney(order.getClient(), order.getSourceCurrency(), order.getSourceValue());
-        OrderRepository.OrderListPair orderListPair = orderRepository.getOrdersByCurrencyPair(order.getCurrencyPair());
-        synchronized (orderListPair) {
-            boolean isCovered = tryFindAndCoverOrder(order, order.isSelling() ? orderListPair.getSellOrders() : orderListPair.getBuyOrders());
-            if (!isCovered) {
-                (order.isSelling() ? orderListPair.getBuyOrders() : orderListPair.getSellOrders()).add(order.getOrderInfo());
+    public ResponseStatus createOrder(Order order) {
+        try {
+            takeMoney(order.getClient(), order.getSourceCurrency(), order.getSourceValue());
+            OrderRepository.OrderListPair orderListPair = orderRepository.getOrdersByCurrencyPair(order.getCurrencyPair());
+            synchronized (orderListPair) {
+                return coverOrCreateOrder(order, orderListPair);
             }
+        } catch (NotEnoughMoneyException | ClientNotFoundException e) {
+            return ResponseStatus.ERROR;
         }
     }
 
-    private boolean tryFindAndCoverOrder(Order order, List<OrderInfo> orders) {
+    private ResponseStatus coverOrCreateOrder(Order order, OrderRepository.OrderListPair orderListPair) throws ClientNotFoundException {
+        List<OrderInfo> backOrders = order.isSelling() ? orderListPair.getBuyOrders() : orderListPair.getSellOrders();
+        boolean isCovered = tryFindAndCoverOrder(order, backOrders);
+        if (isCovered) return ResponseStatus.COVERED;
+
+        List<OrderInfo> orders = order.isSelling() ? orderListPair.getSellOrders() : orderListPair.getBuyOrders();
+        orders.add(order.getOrderInfo());
+        return ResponseStatus.CREATED;
+    }
+
+    private boolean tryFindAndCoverOrder(Order order, List<OrderInfo> orders) throws ClientNotFoundException {
         Optional<OrderInfo> coverOrder = getCoveredOrder(order.getOrderInfo(), orders);
         if (coverOrder.isPresent()) {
             coverOrders(order.getSourceCurrency(), order.getTargetCurrency(), order.getOrderInfo(), coverOrder.get());
@@ -88,7 +102,7 @@ public class SyncExchange implements Exchange {
         }
     }
 
-    private void coverOrders(Currency sourceCurrency, Currency targetCurrency, OrderInfo newOrderInfo, OrderInfo oldOrderInfo) {
+    private void coverOrders(Currency sourceCurrency, Currency targetCurrency, OrderInfo newOrderInfo, OrderInfo oldOrderInfo) throws ClientNotFoundException {
         BigDecimal targetCurrencyOrderSum = oldOrderInfo.getSourceValue().min(newOrderInfo.getTargetValue());
         BigDecimal sourceCurrencyOrderSum = BigDecimalUtils.getValueByRate(targetCurrencyOrderSum, oldOrderInfo.getTargetToSourceRate());
 
@@ -127,7 +141,7 @@ public class SyncExchange implements Exchange {
     }
 
     @Override
-    public Balance getClientBalance(Client client) {
+    public Balance getClientBalance(Client client) throws ClientNotFoundException {
         return clientBalanceRepository.getClientBalance(client);
     }
 

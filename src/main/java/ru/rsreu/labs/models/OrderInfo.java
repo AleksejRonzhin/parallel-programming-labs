@@ -1,10 +1,7 @@
 package ru.rsreu.labs.models;
 
-import ru.rsreu.labs.utils.BigDecimalUtils;
-
 import javax.annotation.concurrent.Immutable;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 
 import static ru.rsreu.labs.utils.BigDecimalUtils.*;
 
@@ -16,22 +13,25 @@ public class OrderInfo {
     private final BigDecimal targetToSourceRate;
     private final Client client;
 
-    public static OrderInfo createByRate(BigDecimal targetValue, BigDecimal sourceToTargetRate, Client client){
-        return new OrderInfo(getValueByRate(targetValue, sourceToTargetRate), targetValue,
-                sourceToTargetRate, getInverseRate(sourceToTargetRate), client);
-    }
-
-    public static OrderInfo createByCurrencyValues(BigDecimal sourceValue, BigDecimal targetValue, Client client){
-        return new OrderInfo(sourceValue, targetValue, getRate(sourceValue, targetValue),
-                getRate(targetValue, sourceValue), client);
-    }
-
     private OrderInfo(BigDecimal sourceValue, BigDecimal targetValue, BigDecimal sourceToTargetRate, BigDecimal targetToSourceRate, Client client) {
         this.targetValue = setValueScale(targetValue);
         this.sourceValue = setValueScale(sourceValue);
         this.sourceToTargetRate = setRateScale(sourceToTargetRate);
         this.targetToSourceRate = setRateScale(targetToSourceRate);
         this.client = client;
+    }
+
+    public static OrderInfo createByRate(BigDecimal targetValue, BigDecimal sourceToTargetRate, Client client) {
+        return new OrderInfo(getValueByRate(targetValue, sourceToTargetRate), targetValue, sourceToTargetRate, getInverseRate(sourceToTargetRate), client);
+    }
+
+    public static OrderInfo createByCurrencyValues(BigDecimal sourceValue, BigDecimal targetValue, Client client) {
+        return new OrderInfo(sourceValue, targetValue, getRate(sourceValue, targetValue), getRate(targetValue, sourceValue), client);
+    }
+
+    @Override
+    public String toString() {
+        return "OrderInfo{" + "sourceValue=" + sourceValue + ", targetValue=" + targetValue + ", sourceToTargetRate=" + sourceToTargetRate + ", targetToSourceRate=" + targetToSourceRate + ", client=" + client + '}';
     }
 
     public BigDecimal getTargetValue() {

@@ -8,7 +8,6 @@ import java.util.Objects;
 public class Order {
     private final CurrencyPair currencyPair;
     private final OrderInfo orderInfo;
-
     private final boolean isSelling;
 
     public Order(CurrencyPair currencyPair, OrderInfo orderInfo, boolean isSelling) {
@@ -25,16 +24,29 @@ public class Order {
         return new Builder(client);
     }
 
+    @Override
+    public String toString() {
+        return "Order{" + "currencyPair=" + currencyPair + ", orderInfo=" + orderInfo + ", isSelling=" + isSelling + '}';
+    }
+
     public CurrencyPair getCurrencyPair() {
         return currencyPair;
     }
 
     public Currency getSourceCurrency() {
-        return currencyPair.getFirstCurrency();
+        if (isSelling) {
+            return currencyPair.getFirstCurrency();
+        } else {
+            return currencyPair.getSecondCurrency();
+        }
     }
 
     public Currency getTargetCurrency() {
-        return currencyPair.getSecondCurrency();
+        if (isSelling) {
+            return currencyPair.getSecondCurrency();
+        } else {
+            return currencyPair.getFirstCurrency();
+        }
     }
 
     public OrderInfo getOrderInfo() {
@@ -77,11 +89,6 @@ public class Order {
         int result = currencyPair != null ? currencyPair.hashCode() : 0;
         result = 31 * result + (orderInfo != null ? orderInfo.hashCode() : 0);
         return result;
-    }
-
-    @Override
-    public String toString() {
-        return "Order{" + "sourceCurrency=" + currencyPair.getFirstCurrency() + ", targetCurrency=" + currencyPair.getSecondCurrency() + ", orderInfo=" + orderInfo;
     }
 
     public boolean isSelling() {

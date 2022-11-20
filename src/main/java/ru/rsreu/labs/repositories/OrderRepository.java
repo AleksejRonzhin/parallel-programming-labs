@@ -12,7 +12,6 @@ public class OrderRepository {
 
     public OrderRepository() {
         this.orders = new HashMap<>();
-        System.out.println(CurrencyPair.getPairs());
         for(CurrencyPair pair: CurrencyPair.getPairs()){
             orders.put(pair, new OrderListPair());
         }

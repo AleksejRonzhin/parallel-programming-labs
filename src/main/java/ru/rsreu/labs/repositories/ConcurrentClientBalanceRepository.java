@@ -1,5 +1,6 @@
 package ru.rsreu.labs.repositories;
 
+import ru.rsreu.labs.exceptions.ClientNotFoundException;
 import ru.rsreu.labs.models.Client;
 import ru.rsreu.labs.models.Currency;
 import ru.rsreu.labs.models.Balance;
@@ -19,8 +20,7 @@ import static ru.rsreu.labs.utils.BigDecimalUtils.setValueScale;
 public class ConcurrentClientBalanceRepository implements ClientBalanceRepository {
     private final Lock lock = new ReentrantLock();
 
-    private final Map<Client, ConcurrentHashMap<Currency, BigDecimal>>
-            clientMoneyStorage = new IdentityHashMap<>();
+    private final Map<Client, ConcurrentHashMap<Currency, BigDecimal>> clientMoneyStorage = new IdentityHashMap<>();
 
     @Override
     public void addClient(Client client) {
@@ -42,19 +42,21 @@ public class ConcurrentClientBalanceRepository implements ClientBalanceRepositor
         }
     }
 
-    private ConcurrentHashMap<Currency, BigDecimal> getClientBalanceMap(Client client){
-        return clientMoneyStorage.get(client);
+    private ConcurrentHashMap<Currency, BigDecimal> getClientBalanceMap(Client client) throws ClientNotFoundException {
+        if (clientMoneyStorage.containsKey(client)) {
+            return clientMoneyStorage.get(client);
+        }
+        throw new ClientNotFoundException();
     }
 
     @Override
-    public void pushMoney(Client client, Currency currency, BigDecimal value) {
+    public void pushMoney(Client client, Currency currency, BigDecimal value) throws ClientNotFoundException {
         ConcurrentHashMap<Currency, BigDecimal> clientMoneyMap = getClientBalanceMap(client);
-        clientMoneyMap.compute(currency, (key, oldValue) -> clientMoneyMap
-                .getOrDefault(key, BigDecimal.ZERO).add(setValueScale(value)));
+        clientMoneyMap.compute(currency, (key, oldValue) -> clientMoneyMap.getOrDefault(key, BigDecimal.ZERO).add(setValueScale(value)));
     }
 
     @Override
-    public boolean tryTakeMoney(Client client, Currency currency, BigDecimal value) {
+    public boolean tryTakeMoney(Client client, Currency currency, BigDecimal value) throws ClientNotFoundException {
         ConcurrentHashMap<Currency, BigDecimal> clientMoneyMap = getClientBalanceMap(client);
         MoneyTaker moneyTaker = new MoneyTaker(value);
         clientMoneyMap.compute(currency, moneyTaker);
@@ -66,9 +68,7 @@ public class ConcurrentClientBalanceRepository implements ClientBalanceRepositor
         try {
             lock.lock();
             ConcurrentHashMap<Currency, BigDecimal> result = new ConcurrentHashMap<>();
-            clientMoneyStorage.forEach((client, map) -> map.forEach((currency, money) ->
-                    result.compute(currency, (key, value) ->
-                            result.getOrDefault(key, BigDecimal.ZERO).add(money))));
+            clientMoneyStorage.forEach((client, map) -> map.forEach((currency, money) -> result.compute(currency, (key, value) -> result.getOrDefault(key, BigDecimal.ZERO).add(money))));
             return new Balance(result);
         } finally {
             lock.unlock();
@@ -86,7 +86,7 @@ public class ConcurrentClientBalanceRepository implements ClientBalanceRepositor
         @Override
         public BigDecimal apply(Currency currency, BigDecimal oldValue) {
             BigDecimal prevValue = oldValue;
-            if(prevValue == null) prevValue = BigDecimal.ZERO;
+            if (prevValue == null) prevValue = BigDecimal.ZERO;
 
             BigDecimal newValue = prevValue.subtract(value);
             if (newValue.compareTo(BigDecimal.ZERO) < 0) {

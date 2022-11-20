@@ -1,8 +1,8 @@
 package ru.rsreu.labs;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
+import ru.rsreu.labs.exceptions.ClientNotFoundException;
 import ru.rsreu.labs.exceptions.NotEnoughMoneyException;
 import ru.rsreu.labs.models.Balance;
 import ru.rsreu.labs.models.Client;
@@ -16,7 +16,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.*;
 
-import static ru.rsreu.labs.models.Currency.*;
+import static ru.rsreu.labs.models.Currency.RUB;
+import static ru.rsreu.labs.models.Currency.USD;
 
 public class ExchangeTest {
     private final ExchangeCreator exchangeCreator;
@@ -26,7 +27,7 @@ public class ExchangeTest {
     }
 
     @Test
-    public void pushMoneyTest() {
+    public void pushMoneyTest() throws ClientNotFoundException {
         Exchange exchange = exchangeCreator.create(false);
 
         Client client = exchange.createClient();
@@ -45,7 +46,7 @@ public class ExchangeTest {
     }
 
     @Test
-    public void takeMoneyTest() throws NotEnoughMoneyException {
+    public void takeMoneyTest() throws NotEnoughMoneyException, ClientNotFoundException {
         Exchange exchange = exchangeCreator.create(false);
 
         Client client = exchange.createClient();
@@ -65,7 +66,7 @@ public class ExchangeTest {
     }
 
     @Test
-    public void takeTooManyMoneyTest() {
+    public void takeTooManyMoneyTest() throws ClientNotFoundException {
         Exchange exchange = exchangeCreator.create(false);
 
         Client client = exchange.createClient();
@@ -75,12 +76,11 @@ public class ExchangeTest {
         BigDecimal beforeValue = beforeClientBalance.get(takenCurrency);
         BigDecimal takenValue = beforeValue.add(BigDecimal.ONE);
 
-        Assertions.assertThrows(NotEnoughMoneyException.class, () ->
-                exchange.takeMoney(client, takenCurrency, takenValue));
+        Assertions.assertThrows(NotEnoughMoneyException.class, () -> exchange.takeMoney(client, takenCurrency, takenValue));
     }
 
     @Test
-    public void addOrderTest() throws NotEnoughMoneyException {
+    public void addOrderTest() throws ClientNotFoundException {
         Exchange exchange = exchangeCreator.create(false);
         Client client = exchange.createClient();
 
@@ -93,7 +93,7 @@ public class ExchangeTest {
     }
 
     @Test
-    public void coveringOrdersTest() throws NotEnoughMoneyException {
+    public void coveringOrdersTest() throws ClientNotFoundException {
         Exchange exchange = exchangeCreator.create(false);
         Client firstClient = exchange.createClient();
         Client secondClient = exchange.createClient();
@@ -113,7 +113,8 @@ public class ExchangeTest {
         Assertions.assertTrue(BigDecimalUtils.equals(BigDecimal.valueOf(65), newSecondClientTargetValue));
     }
 
-    @RepeatedTest(100)
+
+    @Test
     public void stressTest() throws InterruptedException, ExecutionException {
         Exchange exchange = exchangeCreator.create(true);
         int clientCount = 50;
@@ -125,12 +126,13 @@ public class ExchangeTest {
         Balance startGeneralBalance = exchange.getGeneralBalance();
         awaitAddingOrdersTasks(exchange, executorService, clients, clientOrderCount);
         Balance endGeneralBalance = exchange.getGeneralBalance();
-        Assertions.assertEquals(startGeneralBalance, endGeneralBalance);
 
         long expectedOrderCount = clientCount * clientOrderCount;
         long openOrderCount = exchange.getOpenOrders().size();
         long coverCount = exchange.getCoverCount();
         long actualOrderCount = openOrderCount + coverCount * 2;
+
+        Assertions.assertEquals(startGeneralBalance, endGeneralBalance);
         Assertions.assertEquals(expectedOrderCount, actualOrderCount);
     }
 
@@ -138,12 +140,16 @@ public class ExchangeTest {
         Collection<Callable<Client>> tasks = new ArrayList<>(clientCount);
         Callable<Client> clientInit = () -> {
             Client client = exchange.createClient();
-            exchange.pushMoney(client, USD, 100000);
-            exchange.pushMoney(client, RUB, 100000);
-            exchange.pushMoney(client, KZT, 100000);
+            for (Currency currency : Currency.values()) {
+                try {
+                    exchange.pushMoney(client, currency, 100000);
+                } catch (ClientNotFoundException e) {
+                    throw new RuntimeException(e);
+                }
+            }
             return client;
         };
-        for(int i = 0; i < clientCount; i++){
+        for (int i = 0; i < clientCount; i++) {
             tasks.add(clientInit);
         }
 
@@ -159,7 +165,7 @@ public class ExchangeTest {
 
     private <T> Collection<T> waitFutures(Collection<Future<T>> futures) throws ExecutionException, InterruptedException {
         Collection<T> result = new ArrayList<>();
-        for(Future<T> future: futures){
+        for (Future<T> future : futures) {
             result.add(future.get());
         }
         return result;
@@ -167,15 +173,9 @@ public class ExchangeTest {
 
     private Callable<Void> getTarget(Exchange exchange, Client client, int orderCount) {
         return () -> {
-            try {
-                for (int i = 0; i < orderCount; i++) {
-                    exchange.pushMoney(client, USD, 1);
-                    Order order = OrderGenerator.generate(client);
-                    exchange.createOrder(order);
-                    exchange.takeMoney(client, USD, 1);
-                }
-            } catch (NotEnoughMoneyException ignored) {
-
+            for (int i = 0; i < orderCount; i++) {
+                Order order = OrderGenerator.generate(client);
+                exchange.createOrder(order);
             }
             return null;
         };

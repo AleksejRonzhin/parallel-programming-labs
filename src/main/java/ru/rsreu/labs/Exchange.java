@@ -1,10 +1,8 @@
 package ru.rsreu.labs;
 
+import ru.rsreu.labs.exceptions.ClientNotFoundException;
 import ru.rsreu.labs.exceptions.NotEnoughMoneyException;
-import ru.rsreu.labs.models.Balance;
-import ru.rsreu.labs.models.Client;
-import ru.rsreu.labs.models.Currency;
-import ru.rsreu.labs.models.Order;
+import ru.rsreu.labs.models.*;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -12,28 +10,28 @@ import java.util.List;
 public interface Exchange {
     Client createClient();
 
-    void pushMoney(Client client, Currency currency, BigDecimal value);
+    void pushMoney(Client client, Currency currency, BigDecimal value) throws ClientNotFoundException;
 
-    default void pushMoney(Client client, Currency currency, int value) {
+    default void pushMoney(Client client, Currency currency, int value) throws ClientNotFoundException {
         pushMoney(client, currency, BigDecimal.valueOf(value));
     }
 
-    default void pushMoney(Client client, Currency currency, String value) {
+    default void pushMoney(Client client, Currency currency, String value) throws ClientNotFoundException {
         pushMoney(client, currency, new BigDecimal(value));
     }
 
 
-    void takeMoney(Client client, Currency currency, BigDecimal value) throws NotEnoughMoneyException;
+    void takeMoney(Client client, Currency currency, BigDecimal value) throws NotEnoughMoneyException, ClientNotFoundException;
 
-    default void takeMoney(Client client, Currency currency, int value) throws NotEnoughMoneyException{
+    default void takeMoney(Client client, Currency currency, int value) throws NotEnoughMoneyException, ClientNotFoundException {
         takeMoney(client, currency, new BigDecimal(value));
     }
 
-    void createOrder(Order order) throws NotEnoughMoneyException;
+    ResponseStatus createOrder(Order order);
 
     List<Order> getOpenOrders();
 
-    Balance getClientBalance(Client client);
+    Balance getClientBalance(Client client) throws ClientNotFoundException;
 
     Balance getGeneralBalance();
 

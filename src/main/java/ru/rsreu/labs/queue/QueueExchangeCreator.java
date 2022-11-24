@@ -6,6 +6,6 @@ import ru.rsreu.labs.ExchangeCreator;
 public class QueueExchangeCreator implements ExchangeCreator {
     @Override
     public Exchange create(boolean withCommission) {
-        return new QueueExchange();
+        return new QueueExchange(withCommission);
     }
 }

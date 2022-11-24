@@ -117,14 +117,16 @@ public class ExchangeTest {
     @Test
     public void stressTest() throws InterruptedException, ExecutionException {
         Exchange exchange = exchangeCreator.create(true);
-        int clientCount = 50;
-        int clientOrderCount = 3000;
+        int clientCount = 10;
+        int clientOrderCount = 30000;
 
         ExecutorService executorService = Executors.newFixedThreadPool(clientCount);
         Collection<Client> clients = initExchange(exchange, clientCount, executorService);
 
         Balance startGeneralBalance = exchange.getGeneralBalance();
+        long startTime = System.nanoTime();
         awaitAddingOrdersTasks(exchange, executorService, clients, clientOrderCount);
+        long time = System.nanoTime() - startTime;
         Balance endGeneralBalance = exchange.getGeneralBalance();
 
         long expectedOrderCount = clientCount * clientOrderCount;
@@ -132,8 +134,16 @@ public class ExchangeTest {
         long coverCount = exchange.getCoverCount();
         long actualOrderCount = openOrderCount + coverCount * 2;
 
+        System.out.println("Orders: " + actualOrderCount);
+        System.out.println("Open order count: " + openOrderCount);
+        System.out.println("Cover count: " + coverCount);
+        System.out.println("time: " + time * 1E-9 + " sec");
+        double orderPerSec = actualOrderCount / (time * 1E-9);
+        System.out.println("order in sec: " + orderPerSec);
+
         Assertions.assertEquals(startGeneralBalance, endGeneralBalance);
         Assertions.assertEquals(expectedOrderCount, actualOrderCount);
+        System.out.println();
     }
 
     public Collection<Client> initExchange(Exchange exchange, int clientCount, ExecutorService service) throws InterruptedException, ExecutionException {
@@ -142,7 +152,7 @@ public class ExchangeTest {
             Client client = exchange.createClient();
             for (Currency currency : Currency.values()) {
                 try {
-                    exchange.pushMoney(client, currency, 100000);
+                    exchange.pushMoney(client, currency, Integer.MAX_VALUE / 2);
                 } catch (ClientNotFoundException e) {
                     throw new RuntimeException(e);
                 }

@@ -4,10 +4,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import ru.rsreu.labs.exceptions.ClientNotFoundException;
 import ru.rsreu.labs.exceptions.NotEnoughMoneyException;
-import ru.rsreu.labs.models.Balance;
-import ru.rsreu.labs.models.Client;
-import ru.rsreu.labs.models.Currency;
-import ru.rsreu.labs.models.Order;
+import ru.rsreu.labs.models.*;
 import ru.rsreu.labs.utils.BigDecimalUtils;
 
 import java.math.BigDecimal;
@@ -15,12 +12,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static ru.rsreu.labs.models.Currency.RUB;
 import static ru.rsreu.labs.models.Currency.USD;
 
 public class ExchangeTest {
     private final ExchangeCreator exchangeCreator;
+    private final AtomicLong successOrderCreatingCount = new AtomicLong(0L);
 
     protected ExchangeTest(ExchangeCreator exchangeCreator) {
         this.exchangeCreator = exchangeCreator;
@@ -113,7 +112,6 @@ public class ExchangeTest {
         Assertions.assertTrue(BigDecimalUtils.equals(BigDecimal.valueOf(65), newSecondClientTargetValue));
     }
 
-
     @Test
     public void stressTest() throws InterruptedException, ExecutionException {
         Exchange exchange = exchangeCreator.create(true);
@@ -129,7 +127,8 @@ public class ExchangeTest {
         long time = System.nanoTime() - startTime;
         Balance endGeneralBalance = exchange.getGeneralBalance();
 
-        long expectedOrderCount = clientCount * clientOrderCount;
+        long expectedOrderCount = successOrderCreatingCount.get();
+
         long openOrderCount = exchange.getOpenOrders().size();
         long coverCount = exchange.getCoverCount();
         long actualOrderCount = openOrderCount + coverCount * 2;
@@ -152,7 +151,7 @@ public class ExchangeTest {
             Client client = exchange.createClient();
             for (Currency currency : Currency.values()) {
                 try {
-                    exchange.pushMoney(client, currency, Integer.MAX_VALUE / 2);
+                    exchange.pushMoney(client, currency,  Integer.MAX_VALUE / 2);
                 } catch (ClientNotFoundException e) {
                     throw new RuntimeException(e);
                 }
@@ -185,7 +184,8 @@ public class ExchangeTest {
         return () -> {
             for (int i = 0; i < orderCount; i++) {
                 Order order = OrderGenerator.generate(client);
-                exchange.createOrder(order);
+                ResponseStatus status = exchange.createOrder(order);
+                if (status != ResponseStatus.ERROR) successOrderCreatingCount.incrementAndGet();
             }
             return null;
         };

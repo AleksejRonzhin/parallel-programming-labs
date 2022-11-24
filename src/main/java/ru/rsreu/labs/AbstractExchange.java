@@ -32,12 +32,11 @@ public abstract class AbstractExchange implements Exchange {
         this.withCommission = withCommission;
     }
 
-    @Override
-    public ResponseStatus createOrder(Order order) {
-        return createOrder(order, (ignored, target) -> target.get());
+    protected ResponseStatus unsafeCreateOrder(Order order) {
+        return safeCreateOrder(order, (ignored, target) -> target.get());
     }
 
-    protected ResponseStatus createOrder(Order order, BiFunction<OrderRepository.OrderListPair, Supplier<ResponseStatus>, ResponseStatus> actionWithPair) {
+    protected ResponseStatus safeCreateOrder(Order order, BiFunction<OrderRepository.OrderListPair, Supplier<ResponseStatus>, ResponseStatus> actionWithPair) {
         try {
             takeMoney(order.getClient(), order.getSourceCurrency(), order.getSourceValue());
             OrderRepository.OrderListPair orderListPair = getOrderListPair(order.getCurrencyPair());
@@ -53,12 +52,11 @@ public abstract class AbstractExchange implements Exchange {
         }
     }
 
-    @Override
-    public List<Order> getOpenOrders() {
-        return getOpenOrders((ignored, target) -> target.run());
+    public List<Order> unsafeGetOpenOrders() {
+        return safeGetOpenOrders((ignored, target) -> target.run());
     }
 
-    protected List<Order> getOpenOrders(BiConsumer<CurrencyPair, Runnable> actionWithCurrencyPair) {
+    protected List<Order> safeGetOpenOrders(BiConsumer<CurrencyPair, Runnable> actionWithCurrencyPair) {
         List<Order> openOrders = new ArrayList<>();
         Map<CurrencyPair, OrderRepository.OrderListPair> ordersMap = getOrders();
         ordersMap.forEach((currencyPair, ordersPair) -> actionWithCurrencyPair.accept(currencyPair, () -> {
@@ -172,7 +170,7 @@ public abstract class AbstractExchange implements Exchange {
         incrementCoverCount();
     }
 
-    public abstract void incrementCoverCount();
+    protected abstract void incrementCoverCount();
 
     private BigDecimal chargeCommission(BigDecimal value, Currency currency) {
         BigDecimal commission = getCommission(value, COMMISSION_PERCENT);

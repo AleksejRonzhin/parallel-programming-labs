@@ -33,7 +33,7 @@ public class SyncExchange extends AbstractExchange {
 
     @Override
     public ResponseStatus createOrder(Order order) {
-        return super.createOrder(order, (pair, target) -> {
+        return safeCreateOrder(order, (pair, target) -> {
             synchronized (pair) {
                 return target.get();
             }
@@ -42,7 +42,7 @@ public class SyncExchange extends AbstractExchange {
 
     @Override
     public List<Order> getOpenOrders() {
-        return super.getOpenOrders((pair, target) -> {
+        return safeGetOpenOrders((pair, target) -> {
             synchronized (pair) {
                 target.run();
             }

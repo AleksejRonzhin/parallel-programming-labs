@@ -1,6 +1,6 @@
-package ru.rsreu.labs.sync;
+package ru.rsreu.labs.exchange.sync;
 
-import ru.rsreu.labs.AbstractExchange;
+import ru.rsreu.labs.exchange.AbstractExchange;
 import ru.rsreu.labs.models.Currency;
 import ru.rsreu.labs.models.Order;
 import ru.rsreu.labs.models.ResponseStatus;

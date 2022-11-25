@@ -1,4 +1,4 @@
-package ru.rsreu.labs.queue.tasks;
+package ru.rsreu.labs.exchange.queue.tasks;
 
 import ru.rsreu.labs.models.Order;
 

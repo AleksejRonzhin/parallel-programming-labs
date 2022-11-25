@@ -1,7 +1,8 @@
-package ru.rsreu.labs;
+package ru.rsreu.labs.exchange;
 
 import ru.rsreu.labs.exceptions.ClientNotFoundException;
 import ru.rsreu.labs.exceptions.NotEnoughMoneyException;
+import ru.rsreu.labs.exchange.Exchange;
 import ru.rsreu.labs.models.*;
 import ru.rsreu.labs.repositories.ClientBalanceRepository;
 import ru.rsreu.labs.repositories.ConcurrentClientBalanceRepository;

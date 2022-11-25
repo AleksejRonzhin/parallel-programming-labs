@@ -1,7 +1,7 @@
-package ru.rsreu.labs.queue.multi_thread_handle;
+package ru.rsreu.labs.exchange.queue.multi_thread_handle;
 
-import ru.rsreu.labs.Exchange;
-import ru.rsreu.labs.ExchangeCreator;
+import ru.rsreu.labs.exchange.Exchange;
+import ru.rsreu.labs.exchange.ExchangeCreator;
 
 public class MultiThreadQueueExchangeCreator implements ExchangeCreator {
     @Override

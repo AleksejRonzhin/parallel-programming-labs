@@ -1,9 +1,9 @@
-package ru.rsreu.labs.queue;
+package ru.rsreu.labs.exchange.queue;
 
-import ru.rsreu.labs.AbstractExchange;
+import ru.rsreu.labs.exchange.AbstractExchange;
 import ru.rsreu.labs.models.Order;
 import ru.rsreu.labs.models.ResponseStatus;
-import ru.rsreu.labs.queue.tasks.CreateOrderTask;
+import ru.rsreu.labs.exchange.queue.tasks.CreateOrderTask;
 
 import javax.annotation.concurrent.NotThreadSafe;
 import java.util.List;

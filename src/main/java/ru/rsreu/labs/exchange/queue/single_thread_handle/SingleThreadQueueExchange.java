@@ -1,7 +1,7 @@
-package ru.rsreu.labs.queue.single_thread_handle;
+package ru.rsreu.labs.exchange.queue.single_thread_handle;
 
 import ru.rsreu.labs.models.Currency;
-import ru.rsreu.labs.queue.QueueExchange;
+import ru.rsreu.labs.exchange.queue.QueueExchange;
 
 import javax.annotation.concurrent.NotThreadSafe;
 import java.math.BigDecimal;

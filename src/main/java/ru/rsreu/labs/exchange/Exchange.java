@@ -1,4 +1,4 @@
-package ru.rsreu.labs;
+package ru.rsreu.labs.exchange;
 
 import ru.rsreu.labs.exceptions.ClientNotFoundException;
 import ru.rsreu.labs.exceptions.NotEnoughMoneyException;

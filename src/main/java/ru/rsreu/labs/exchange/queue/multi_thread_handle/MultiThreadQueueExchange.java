@@ -1,10 +1,10 @@
-package ru.rsreu.labs.queue.multi_thread_handle;
+package ru.rsreu.labs.exchange.queue.multi_thread_handle;
 
 import ru.rsreu.labs.models.Currency;
 import ru.rsreu.labs.models.CurrencyPair;
 import ru.rsreu.labs.models.Order;
-import ru.rsreu.labs.queue.QueueExchange;
-import ru.rsreu.labs.queue.tasks.CreateOrderTask;
+import ru.rsreu.labs.exchange.queue.QueueExchange;
+import ru.rsreu.labs.exchange.queue.tasks.CreateOrderTask;
 
 import javax.annotation.concurrent.NotThreadSafe;
 import java.math.BigDecimal;

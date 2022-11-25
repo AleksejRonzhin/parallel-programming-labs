@@ -1,7 +1,7 @@
-package ru.rsreu.labs.sync;
+package ru.rsreu.labs.exchange.sync;
 
-import ru.rsreu.labs.Exchange;
-import ru.rsreu.labs.ExchangeCreator;
+import ru.rsreu.labs.exchange.Exchange;
+import ru.rsreu.labs.exchange.ExchangeCreator;
 
 public class SyncExchangeCreator implements ExchangeCreator {
     @Override

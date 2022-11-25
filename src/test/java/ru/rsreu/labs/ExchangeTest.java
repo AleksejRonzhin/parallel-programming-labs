@@ -140,7 +140,7 @@ public class ExchangeTest {
         System.out.println("Cover count: " + coverCount);
         System.out.println("time: " + time * 1E-9 + " sec");
         double orderPerSec = actualOrderCount / (time * 1E-9);
-        System.out.println("order in sec: " + orderPerSec);
+        System.out.println("orders per sec: " + orderPerSec);
 
         Assertions.assertEquals(startGeneralBalance, endGeneralBalance);
         Assertions.assertEquals(expectedOrderCount, actualOrderCount);
@@ -153,7 +153,7 @@ public class ExchangeTest {
             Client client = exchange.createClient();
             for (Currency currency : Currency.values()) {
                 try {
-                    exchange.pushMoney(client, currency, Integer.MAX_VALUE / 2);
+                    exchange.pushMoney(client, currency, Integer.MAX_VALUE);
                 } catch (ClientNotFoundException e) {
                     throw new RuntimeException(e);
                 }

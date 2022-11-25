@@ -5,6 +5,7 @@ import ru.rsreu.labs.models.Currency;
 import ru.rsreu.labs.models.Order;
 
 import java.math.BigDecimal;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class OrderGenerator {
 
@@ -27,6 +28,6 @@ public class OrderGenerator {
     }
 
     private static int getRandomValueInRange(int left, int right) {
-        return left + (int) (Math.random() * (right - left));
+        return ThreadLocalRandom.current().nextInt(left, right);
     }
 }

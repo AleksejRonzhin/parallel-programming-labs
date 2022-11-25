@@ -151,7 +151,7 @@ public class ExchangeTest {
             Client client = exchange.createClient();
             for (Currency currency : Currency.values()) {
                 try {
-                    exchange.pushMoney(client, currency,  Integer.MAX_VALUE / 2);
+                    exchange.pushMoney(client, currency, Integer.MAX_VALUE / 2);
                 } catch (ClientNotFoundException e) {
                     throw new RuntimeException(e);
                 }

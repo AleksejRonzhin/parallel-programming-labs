@@ -2,7 +2,6 @@ package ru.rsreu.labs.exchange;
 
 import ru.rsreu.labs.exceptions.ClientNotFoundException;
 import ru.rsreu.labs.exceptions.NotEnoughMoneyException;
-import ru.rsreu.labs.exchange.Exchange;
 import ru.rsreu.labs.models.*;
 import ru.rsreu.labs.repositories.ClientBalanceRepository;
 import ru.rsreu.labs.repositories.ConcurrentClientBalanceRepository;
@@ -28,12 +27,14 @@ public abstract class AbstractExchange implements Exchange {
     private final ClientBalanceRepository clientBalanceRepository = new ConcurrentClientBalanceRepository();
     private final OrderRepository orderRepository = new OrderRepository();
     private final boolean withCommission;
+    private final ExchangeHelper helper;
 
-    protected AbstractExchange(boolean withCommission) {
+    protected AbstractExchange(boolean withCommission, ExchangeHelper helper) {
         this.withCommission = withCommission;
+        this.helper = helper;
     }
 
-    protected ResponseStatus unsafeCreateOrder(Order order) {
+    public ResponseStatus unsafeCreateOrder(Order order) {
         return safeCreateOrder(order, (ignored, target) -> target.get());
     }
 
@@ -96,11 +97,10 @@ public abstract class AbstractExchange implements Exchange {
     public Balance getGeneralBalance() {
         Balance clientBalance = clientBalanceRepository.getGeneralClientsBalance();
         Balance openOrdersCost = getOpenOrdersCost();
-        Balance commission = new Balance(getBank());
+        Balance commission = new Balance(helper.getBank());
         return clientBalance.add(openOrdersCost.add(commission));
     }
 
-    public abstract Map<Currency, BigDecimal> getBank();
 
     private Balance getOpenOrdersCost() {
         ConcurrentHashMap<Currency, BigDecimal> result = new ConcurrentHashMap<>();
@@ -168,15 +168,18 @@ public abstract class AbstractExchange implements Exchange {
         clientBalanceRepository.pushMoney(oldOrderInfo.getClient(), sourceCurrency, sourceCurrencyOrderSum);
         clientBalanceRepository.pushMoney(newOrderInfo.getClient(), targetCurrency, targetCurrencyOrderSum);
 
-        incrementCoverCount();
+        helper.incrementCoverCount();
     }
-
-    protected abstract void incrementCoverCount();
 
     private BigDecimal chargeCommission(BigDecimal value, Currency currency) {
         BigDecimal commission = getCommission(value, COMMISSION_PERCENT);
-        Map<Currency, BigDecimal> bank = getBank();
+        Map<Currency, BigDecimal> bank = helper.getBank();
         bank.compute(currency, (key, ignored) -> bank.getOrDefault(key, BigDecimal.ZERO).add(commission));
         return value.subtract(commission);
+    }
+
+    @Override
+    public long getCoverCount() {
+        return helper.getCoverCount();
     }
 }

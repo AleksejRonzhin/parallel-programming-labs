@@ -1,6 +1,7 @@
-package ru.rsreu.labs;
+package ru.rsreu.labs.exchange;
 
 import org.junit.jupiter.api.*;
+import ru.rsreu.labs.OrderGenerator;
 import ru.rsreu.labs.exceptions.ClientNotFoundException;
 import ru.rsreu.labs.exceptions.NotEnoughMoneyException;
 import ru.rsreu.labs.exchange.Exchange;

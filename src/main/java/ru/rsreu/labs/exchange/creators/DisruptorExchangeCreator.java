@@ -1,7 +1,8 @@
-package ru.rsreu.labs.exchange.disruptor;
+package ru.rsreu.labs.exchange.creators;
 
 import ru.rsreu.labs.exchange.Exchange;
 import ru.rsreu.labs.exchange.ExchangeCreator;
+import ru.rsreu.labs.exchange.disruptor.DisruptorExchange;
 
 public class DisruptorExchangeCreator implements ExchangeCreator {
     @Override

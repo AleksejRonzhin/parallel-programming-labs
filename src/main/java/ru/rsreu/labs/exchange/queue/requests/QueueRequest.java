@@ -1,8 +1,8 @@
-package ru.rsreu.labs.exchange.queue.tasks;
+package ru.rsreu.labs.exchange.queue.requests;
 
 import java.util.concurrent.CountDownLatch;
 
-public class QueueTask<T> {
+public class QueueRequest<T> {
     private final CountDownLatch latch = new CountDownLatch(1);
     private T result;
 

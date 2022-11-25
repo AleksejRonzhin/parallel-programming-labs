@@ -7,6 +7,6 @@ import ru.rsreu.labs.exchange.queue.multi_thread_handle.MultiThreadQueueExchange
 @Tag("exchange")
 public class MultiThreadQueueExchangeTest extends ExchangeTest {
     protected MultiThreadQueueExchangeTest() {
-        super(new MultiThreadQueueExchangeCreator());
+        super(new MultiThreadQueueExchangeCreator(), "MULTI THREAD QUEUE");
     }
 }

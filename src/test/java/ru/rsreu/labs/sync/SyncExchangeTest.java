@@ -7,6 +7,6 @@ import ru.rsreu.labs.exchange.sync.SyncExchangeCreator;
 @Tag("exchange")
 class SyncExchangeTest extends ExchangeTest {
     public SyncExchangeTest() {
-        super(new SyncExchangeCreator());
+        super(new SyncExchangeCreator(), "SYNC");
     }
 }

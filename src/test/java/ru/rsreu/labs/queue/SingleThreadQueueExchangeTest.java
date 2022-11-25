@@ -7,6 +7,6 @@ import ru.rsreu.labs.exchange.queue.single_thread_handle.SingleThreadQueueExchan
 @Tag("exchange")
 class SingleThreadQueueExchangeTest extends ExchangeTest {
     protected SingleThreadQueueExchangeTest() {
-        super(new SingleThreadQueueExchangeCreator());
+        super(new SingleThreadQueueExchangeCreator(), "SINGLE THREAD QUEUE");
     }
 }

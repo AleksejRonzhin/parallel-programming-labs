@@ -1,12 +1,12 @@
 package ru.rsreu.labs;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import ru.rsreu.labs.exceptions.ClientNotFoundException;
 import ru.rsreu.labs.exceptions.NotEnoughMoneyException;
 import ru.rsreu.labs.exchange.Exchange;
 import ru.rsreu.labs.exchange.ExchangeCreator;
 import ru.rsreu.labs.models.*;
+import ru.rsreu.labs.models.Order;
 import ru.rsreu.labs.utils.BigDecimalUtils;
 
 import java.math.BigDecimal;
@@ -19,12 +19,20 @@ import java.util.concurrent.atomic.AtomicLong;
 import static ru.rsreu.labs.models.Currency.RUB;
 import static ru.rsreu.labs.models.Currency.USD;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ExchangeTest {
     private final ExchangeCreator exchangeCreator;
     private final AtomicLong successOrderCreatingCount = new AtomicLong(0L);
+    private final String name;
 
-    protected ExchangeTest(ExchangeCreator exchangeCreator) {
+    protected ExchangeTest(ExchangeCreator exchangeCreator, String name) {
         this.exchangeCreator = exchangeCreator;
+        this.name = name;
+    }
+
+    @BeforeAll
+    public void printName(){
+        System.out.println(name);
     }
 
     @Test
@@ -139,7 +147,7 @@ public class ExchangeTest {
         System.out.println("Open order count: " + openOrderCount);
         System.out.println("Cover count: " + coverCount);
         System.out.println("time: " + time * 1E-9 + " sec");
-        double orderPerSec = actualOrderCount / (time * 1E-9);
+        int orderPerSec = (int) (actualOrderCount / (time * 1E-9));
         System.out.println("orders per sec: " + orderPerSec);
 
         Assertions.assertEquals(startGeneralBalance, endGeneralBalance);

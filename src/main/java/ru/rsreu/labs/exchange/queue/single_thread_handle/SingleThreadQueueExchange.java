@@ -10,12 +10,13 @@ import java.util.Map;
 
 @NotThreadSafe
 public class SingleThreadQueueExchange extends QueueExchange {
-    private final Map<Currency, BigDecimal> bank = new HashMap<>();
-    private long coverCount = 0;
 
     public SingleThreadQueueExchange(boolean withCommission) {
         super(withCommission);
     }
+
+    private final Map<Currency, BigDecimal> bank = new HashMap<>();
+    private long coverCount = 0;
 
     @Override
     public long getCoverCount() {

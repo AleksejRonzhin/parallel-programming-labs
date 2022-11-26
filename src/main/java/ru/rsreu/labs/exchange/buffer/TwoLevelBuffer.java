@@ -1,6 +1,6 @@
 package ru.rsreu.labs.exchange.buffer;
 
-import ru.rsreu.labs.exchange.buffer.requests.CreateOrderRequest;
+import ru.rsreu.labs.exchange.buffer.models.requests.CreateOrderRequest;
 import ru.rsreu.labs.models.CurrencyPair;
 import ru.rsreu.labs.models.ResponseStatus;
 
@@ -13,8 +13,8 @@ public class TwoLevelBuffer implements RequestBuffer {
     private final RequestBuffer mainRequestBuffer;
     private final Map<CurrencyPair, RequestBuffer> twoLevelBuffers;
 
-    public TwoLevelBuffer(ProcessingRequestBufferFactory mainBufferFactory,
-                          ProcessingRequestBufferFactory twoLevelBufferFactory,
+    public TwoLevelBuffer(RequestBufferFactory mainBufferFactory,
+                          RequestBufferFactory twoLevelBufferFactory,
                           Consumer<CreateOrderRequest> consumer) {
         this.mainRequestBuffer = mainBufferFactory.create(this::handle);
         twoLevelBuffers = new HashMap<>();

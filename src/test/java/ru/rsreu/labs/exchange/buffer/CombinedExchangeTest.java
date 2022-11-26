@@ -1,11 +1,9 @@
 package ru.rsreu.labs.exchange.buffer;
 
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import ru.rsreu.labs.exchange.ExchangeTest;
-import ru.rsreu.labs.exchange.creators.CombinedExchangeFactory;
+import ru.rsreu.labs.exchange.buffer.combined.CombinedExchangeFactory;
 
-@Order(6)
 @Tag("exchange")
 class CombinedExchangeTest extends ExchangeTest {
     protected CombinedExchangeTest() {

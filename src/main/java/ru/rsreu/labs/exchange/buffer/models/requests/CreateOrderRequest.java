@@ -1,4 +1,4 @@
-package ru.rsreu.labs.exchange.buffer.requests;
+package ru.rsreu.labs.exchange.buffer.models.requests;
 
 import ru.rsreu.labs.models.Order;
 import ru.rsreu.labs.models.ResponseStatus;

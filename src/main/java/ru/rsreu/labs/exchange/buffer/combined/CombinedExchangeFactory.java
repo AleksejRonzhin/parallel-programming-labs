@@ -1,6 +1,6 @@
-package ru.rsreu.labs.exchange.creators;
+package ru.rsreu.labs.exchange.buffer.combined;
 
-import ru.rsreu.labs.exchange.buffer.CombinedExchange;
+import ru.rsreu.labs.exchange.ExchangeFactory;
 import ru.rsreu.labs.exchange.Exchange;
 
 public class CombinedExchangeFactory implements ExchangeFactory {

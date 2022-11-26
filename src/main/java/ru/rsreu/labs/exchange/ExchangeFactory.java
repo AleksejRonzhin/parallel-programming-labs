@@ -1,6 +1,4 @@
-package ru.rsreu.labs.exchange.creators;
-
-import ru.rsreu.labs.exchange.Exchange;
+package ru.rsreu.labs.exchange;
 
 public interface ExchangeFactory {
     Exchange create(boolean withCommission);

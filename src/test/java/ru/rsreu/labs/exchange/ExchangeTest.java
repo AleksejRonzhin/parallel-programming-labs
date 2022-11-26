@@ -4,7 +4,6 @@ import org.junit.jupiter.api.*;
 import ru.rsreu.labs.OrderGenerator;
 import ru.rsreu.labs.exceptions.ClientNotFoundException;
 import ru.rsreu.labs.exceptions.NotEnoughMoneyException;
-import ru.rsreu.labs.exchange.creators.ExchangeFactory;
 import ru.rsreu.labs.models.*;
 import ru.rsreu.labs.models.Order;
 import ru.rsreu.labs.utils.BigDecimalUtils;

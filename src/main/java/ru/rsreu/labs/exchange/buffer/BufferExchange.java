@@ -1,7 +1,7 @@
 package ru.rsreu.labs.exchange.buffer;
 
 import ru.rsreu.labs.exchange.AbstractExchange;
-import ru.rsreu.labs.exchange.buffer.requests.CreateOrderRequest;
+import ru.rsreu.labs.exchange.buffer.models.requests.CreateOrderRequest;
 import ru.rsreu.labs.exchange.helper.ExchangeHelper;
 import ru.rsreu.labs.models.Order;
 import ru.rsreu.labs.models.ResponseStatus;
@@ -11,7 +11,7 @@ import java.util.List;
 public class BufferExchange extends AbstractExchange {
     private final RequestBuffer requestBuffer;
 
-    protected BufferExchange(boolean withCommission, ExchangeHelper helper, ProcessingRequestBufferFactory bufferFactory) {
+    protected BufferExchange(boolean withCommission, ExchangeHelper helper, RequestBufferFactory bufferFactory) {
         super(withCommission, helper);
         this.requestBuffer = bufferFactory.create(this::handle);
     }

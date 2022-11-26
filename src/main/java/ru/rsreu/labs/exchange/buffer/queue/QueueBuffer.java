@@ -1,7 +1,7 @@
 package ru.rsreu.labs.exchange.buffer.queue;
 
 import ru.rsreu.labs.exchange.buffer.RequestBuffer;
-import ru.rsreu.labs.exchange.buffer.requests.CreateOrderRequest;
+import ru.rsreu.labs.exchange.buffer.models.requests.CreateOrderRequest;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;

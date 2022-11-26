@@ -1,4 +1,4 @@
-package ru.rsreu.labs.exchange.buffer.requests;
+package ru.rsreu.labs.exchange.buffer.models.requests;
 
 import java.util.concurrent.CountDownLatch;
 

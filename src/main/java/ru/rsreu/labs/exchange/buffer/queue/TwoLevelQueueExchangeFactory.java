@@ -1,7 +1,7 @@
-package ru.rsreu.labs.exchange.creators;
+package ru.rsreu.labs.exchange.buffer.queue;
 
 import ru.rsreu.labs.exchange.Exchange;
-import ru.rsreu.labs.exchange.buffer.queue.TwoLevelQueueExchange;
+import ru.rsreu.labs.exchange.ExchangeFactory;
 
 public class TwoLevelQueueExchangeFactory implements ExchangeFactory {
     @Override

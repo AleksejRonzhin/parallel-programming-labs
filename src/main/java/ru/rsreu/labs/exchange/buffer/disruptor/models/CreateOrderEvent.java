@@ -1,7 +1,7 @@
 package ru.rsreu.labs.exchange.buffer.disruptor.models;
 
 import com.lmax.disruptor.EventFactory;
-import ru.rsreu.labs.exchange.buffer.requests.CreateOrderRequest;
+import ru.rsreu.labs.exchange.buffer.models.requests.CreateOrderRequest;
 
 public class CreateOrderEvent {
     public final static EventFactory<CreateOrderEvent> EVENT_FACTORY

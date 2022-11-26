@@ -2,7 +2,6 @@ package ru.rsreu.labs.exchange.sync;
 
 import org.junit.jupiter.api.*;
 import ru.rsreu.labs.exchange.ExchangeTest;
-import ru.rsreu.labs.exchange.creators.SyncExchangeFactory;
 
 @Tag("exchange")
 class SyncExchangeTest extends ExchangeTest {

@@ -4,8 +4,7 @@ import org.junit.jupiter.api.*;
 import ru.rsreu.labs.OrderGenerator;
 import ru.rsreu.labs.exceptions.ClientNotFoundException;
 import ru.rsreu.labs.exceptions.NotEnoughMoneyException;
-import ru.rsreu.labs.exchange.Exchange;
-import ru.rsreu.labs.exchange.ExchangeCreator;
+import ru.rsreu.labs.exchange.creators.ExchangeFactory;
 import ru.rsreu.labs.models.*;
 import ru.rsreu.labs.models.Order;
 import ru.rsreu.labs.utils.BigDecimalUtils;
@@ -22,12 +21,12 @@ import static ru.rsreu.labs.models.Currency.USD;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ExchangeTest {
-    private final ExchangeCreator exchangeCreator;
+    private final ExchangeFactory exchangeFactory;
     private final AtomicLong successOrderCreatingCount = new AtomicLong(0L);
     private final String name;
 
-    protected ExchangeTest(ExchangeCreator exchangeCreator, String name) {
-        this.exchangeCreator = exchangeCreator;
+    protected ExchangeTest(ExchangeFactory exchangeFactory, String name) {
+        this.exchangeFactory = exchangeFactory;
         this.name = name;
     }
 
@@ -38,7 +37,7 @@ public class ExchangeTest {
 
     @Test
     public void pushMoneyTest() throws ClientNotFoundException {
-        Exchange exchange = exchangeCreator.create(false);
+        Exchange exchange = exchangeFactory.create(false);
 
         Client client = exchange.createClient();
         Currency pushedCurrency = USD;
@@ -57,7 +56,7 @@ public class ExchangeTest {
 
     @Test
     public void takeMoneyTest() throws NotEnoughMoneyException, ClientNotFoundException {
-        Exchange exchange = exchangeCreator.create(false);
+        Exchange exchange = exchangeFactory.create(false);
 
         Client client = exchange.createClient();
         Currency takenCurrency = RUB;
@@ -77,7 +76,7 @@ public class ExchangeTest {
 
     @Test
     public void takeTooManyMoneyTest() throws ClientNotFoundException {
-        Exchange exchange = exchangeCreator.create(false);
+        Exchange exchange = exchangeFactory.create(false);
 
         Client client = exchange.createClient();
         Currency takenCurrency = RUB;
@@ -91,7 +90,7 @@ public class ExchangeTest {
 
     @Test
     public void addOrderTest() throws ClientNotFoundException {
-        Exchange exchange = exchangeCreator.create(false);
+        Exchange exchange = exchangeFactory.create(false);
         Client client = exchange.createClient();
 
         exchange.pushMoney(client, USD, 10);
@@ -104,7 +103,7 @@ public class ExchangeTest {
 
     @Test
     public void coveringOrdersTest() throws ClientNotFoundException {
-        Exchange exchange = exchangeCreator.create(false);
+        Exchange exchange = exchangeFactory.create(false);
         Client firstClient = exchange.createClient();
         Client secondClient = exchange.createClient();
         exchange.pushMoney(firstClient, RUB, 1000);
@@ -125,7 +124,7 @@ public class ExchangeTest {
 
     @Test
     public void stressTest() throws InterruptedException, ExecutionException {
-        Exchange exchange = exchangeCreator.create(true);
+        Exchange exchange = exchangeFactory.create(true);
         int clientCount = 10;
         int clientOrderCount = 30000;
 

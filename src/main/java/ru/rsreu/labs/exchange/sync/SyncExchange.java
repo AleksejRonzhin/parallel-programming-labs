@@ -1,7 +1,7 @@
 package ru.rsreu.labs.exchange.sync;
 
 import ru.rsreu.labs.exchange.AbstractExchange;
-import ru.rsreu.labs.exchange.SafeHelper;
+import ru.rsreu.labs.exchange.helper.SafeHelper;
 import ru.rsreu.labs.models.Order;
 import ru.rsreu.labs.models.ResponseStatus;
 

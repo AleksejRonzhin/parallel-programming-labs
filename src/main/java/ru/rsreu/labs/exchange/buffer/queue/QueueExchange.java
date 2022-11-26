@@ -1,12 +1,10 @@
 package ru.rsreu.labs.exchange.buffer.queue;
 
 import ru.rsreu.labs.exchange.buffer.BufferExchange;
+import ru.rsreu.labs.exchange.helper.UnsafeHelper;
 
-import javax.annotation.concurrent.NotThreadSafe;
-
-@NotThreadSafe
 public class QueueExchange extends BufferExchange {
     public QueueExchange(boolean withCommission) {
-        super(withCommission, new QueueBuffer());
+        super(withCommission, new UnsafeHelper(), new QueueBufferFactory());
     }
 }

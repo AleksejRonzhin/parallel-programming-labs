@@ -20,6 +20,7 @@ import static ru.rsreu.labs.models.Currency.RUB;
 import static ru.rsreu.labs.models.Currency.USD;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ExchangeTest {
     private final ExchangeFactory exchangeFactory;
     private final AtomicLong successOrderCreatingCount = new AtomicLong(0L);
@@ -35,7 +36,9 @@ public class ExchangeTest {
         System.out.println(name);
     }
 
+
     @Test
+    @org.junit.jupiter.api.Order(1)
     public void pushMoneyTest() throws ClientNotFoundException {
         Exchange exchange = exchangeFactory.create(false);
 
@@ -55,6 +58,7 @@ public class ExchangeTest {
     }
 
     @Test
+    @org.junit.jupiter.api.Order(2)
     public void takeMoneyTest() throws NotEnoughMoneyException, ClientNotFoundException {
         Exchange exchange = exchangeFactory.create(false);
 
@@ -75,6 +79,7 @@ public class ExchangeTest {
     }
 
     @Test
+    @org.junit.jupiter.api.Order(3)
     public void takeTooManyMoneyTest() throws ClientNotFoundException {
         Exchange exchange = exchangeFactory.create(false);
 
@@ -89,6 +94,7 @@ public class ExchangeTest {
     }
 
     @Test
+    @org.junit.jupiter.api.Order(4)
     public void addOrderTest() throws ClientNotFoundException {
         Exchange exchange = exchangeFactory.create(false);
         Client client = exchange.createClient();
@@ -102,6 +108,7 @@ public class ExchangeTest {
     }
 
     @Test
+    @org.junit.jupiter.api.Order(5)
     public void coveringOrdersTest() throws ClientNotFoundException {
         Exchange exchange = exchangeFactory.create(false);
         Client firstClient = exchange.createClient();
@@ -123,6 +130,7 @@ public class ExchangeTest {
     }
 
     @Test
+    @org.junit.jupiter.api.Order(6)
     public void stressTest() throws InterruptedException, ExecutionException {
         Exchange exchange = exchangeFactory.create(true);
         int clientCount = 10;
